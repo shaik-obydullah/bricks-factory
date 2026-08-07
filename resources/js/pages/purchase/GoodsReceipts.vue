@@ -11,15 +11,14 @@
     <div v-else class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-600">
-          <tr><th class="text-left px-4 py-3 font-medium">Date</th><th class="text-left px-4 py-3 font-medium">PO #</th><th class="text-left px-4 py-3 font-medium">Supplier</th><th class="text-left px-4 py-3 font-medium">Item</th><th class="text-left px-4 py-3 font-medium">Quantity</th><th class="text-left px-4 py-3 font-medium">Status</th></tr>
+          <tr><th class="text-left px-4 py-3 font-medium">Date</th><th class="text-left px-4 py-3 font-medium">PO #</th><th class="text-left px-4 py-3 font-medium">Supplier</th><th class="text-left px-4 py-3 font-medium">Quantity</th><th class="text-left px-4 py-3 font-medium">Status</th></tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3">{{ item.received_date || item.created_at?.substring(0, 10) }}</td>
+            <td class="px-4 py-3">{{ item.receipt_date || item.created_at?.substring(0, 10) }}</td>
             <td class="px-4 py-3">#{{ item.purchase_order_id }}</td>
-            <td class="px-4 py-3">{{ item.purchase_order?.supplier?.name || '-' }}</td>
-            <td class="px-4 py-3">{{ item.raw_material?.name || '-' }}</td>
-            <td class="px-4 py-3">{{ item.quantity_received }}</td>
+            <td class="px-4 py-3">{{ item.order?.supplier?.name || '-' }}</td>
+            <td class="px-4 py-3">{{ item.quantity_received ?? '-' }}</td>
             <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="item.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">{{ item.status }}</span></td>
           </tr>
         </tbody>

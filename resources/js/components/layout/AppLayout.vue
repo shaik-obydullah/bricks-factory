@@ -115,7 +115,8 @@
         <div class="flex items-center gap-4">
           <div class="relative">
             <select
-              v-model="selectedWarehouse"
+              v-model="appStore.selectedWarehouse"
+              @change="onWarehouseChange"
               class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">All Warehouses</option>
@@ -123,17 +124,12 @@
             </select>
           </div>
           <div class="relative">
-            <button @click="showUserMenu = !showUserMenu" class="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900">
+            <button @click="showUserDrawer = true" class="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900">
               <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-semibold text-sm">
                 {{ authStore.user?.name?.charAt(0)?.toUpperCase() || 'U' }}
               </div>
               <span class="hidden md:inline">{{ authStore.user?.name }}</span>
             </button>
-            <div v-if="showUserMenu" @click.self="showUserMenu = false" class="fixed inset-0 z-10"></div>
-            <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-              <router-link to="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" @click="showUserMenu = false">Settings</router-link>
-              <button @click="handleLogout" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</button>
-            </div>
           </div>
         </div>
       </header>
@@ -143,24 +139,31 @@
         <router-view />
       </main>
     </div>
+
+    <UserDrawer :open="showUserDrawer" @close="showUserDrawer = false" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 import NavItem from './NavItem.vue'
+import UserDrawer from './UserDrawer.vue'
 import axios from '@/utils/axios'
 
 const route = useRoute()
-const router = useRouter()
 const authStore = useAuthStore()
+const appStore = useAppStore()
 
 const mobileSidebarOpen = ref(false)
-const showUserMenu = ref(false)
-const selectedWarehouse = ref('')
+const showUserDrawer = ref(false)
 const warehouses = ref([])
+
+function onWarehouseChange() {
+  appStore.setSelectedWarehouse(appStore.selectedWarehouse)
+}
 
 const pageTitle = computed(() => {
   const name = route.name
@@ -201,22 +204,11 @@ const pageTitle = computed(() => {
   return titles[name] || name
 })
 
-watch(selectedWarehouse, (val) => {
-  localStorage.setItem('selected_warehouse', val)
-})
-
 onMounted(() => {
-  selectedWarehouse.value = localStorage.getItem('selected_warehouse') || ''
   axios.get('/warehouses').then(({ data }) => {
     warehouses.value = data.data || data
   }).catch(() => {})
 })
-
-async function handleLogout() {
-  showUserMenu.value = false
-  await authStore.logout()
-  router.push('/login')
-}
 
 const icons = {
   dashboard: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>',

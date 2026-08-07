@@ -55,6 +55,7 @@ class PurchaseController extends Controller
     {
         $data = $request->validated();
         $data['created_by'] = auth()->id();
+        $data['items'] = $this->normalizeItems($data['items'] ?? []);
         $order = $this->purchaseService->createOrder($data);
         return response()->json($order->load('supplier', 'items.material'), 201);
     }
@@ -63,6 +64,79 @@ class PurchaseController extends Controller
     {
         $purchaseOrder->load('supplier', 'items.material', 'goodsReceipts', 'purchaseInvoices', 'creator');
         return response()->json($purchaseOrder);
+    }
+
+    public function updateOrder(StorePurchaseOrderRequest $request, PurchaseOrder $purchaseOrder): JsonResponse
+    {
+        $data = $request->validated();
+        $data['items'] = $this->normalizeItems($data['items'] ?? []);
+
+        $purchaseOrder = \Illuminate\Support\Facades\DB::transaction(function () use ($purchaseOrder, $data) {
+            $purchaseOrder->update([
+                'supplier_id' => $data['supplier_id'],
+                'order_date' => $data['order_date'],
+                'expected_date' => $data['expected_date'] ?? null,
+                'status' => $data['status'] ?? $purchaseOrder->status,
+                'notes' => $data['notes'] ?? null,
+            ]);
+
+            if (!empty($data['items'])) {
+                $purchaseOrder->items()->delete();
+                foreach ($data['items'] as $item) {
+                    $purchaseOrder->items()->create($item);
+                }
+                $total = $purchaseOrder->items->sum('total');
+                $purchaseOrder->update(['total_amount' => $total]);
+            }
+
+            return $purchaseOrder;
+        });
+
+        return response()->json($purchaseOrder->load('supplier', 'items.material'));
+    }
+
+    protected function normalizeItems(array $items): array
+    {
+        return array_map(function ($item) {
+            $item['material_id'] = $item['material_id'] ?? ($item['raw_material_id'] ?? null);
+            $item['total'] = $item['total'] ?? ((float) ($item['quantity'] ?? 0) * (float) ($item['unit_price'] ?? 0));
+            unset($item['raw_material_id']);
+            return $item;
+        }, $items);
+    }
+
+    public function destroyOrder(PurchaseOrder $purchaseOrder): JsonResponse
+    {
+        $purchaseOrder->delete();
+        return response()->json(['message' => 'Purchase order deleted']);
+    }
+
+    public function goodsReceipts(): JsonResponse
+    {
+        $receipts = \App\Models\GoodsReceipt::with('order.supplier', 'receiver')->latest()->paginate(20);
+        return response()->json($receipts);
+    }
+
+    public function storeGoodsReceipt(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'purchase_order_id' => 'required|exists:purchase_orders,id',
+            'raw_material_id' => 'nullable|exists:raw_materials,id',
+            'quantity_received' => 'nullable|numeric|min:0',
+            'received_date' => 'nullable|date',
+        ]);
+
+        $order = PurchaseOrder::findOrFail($data['purchase_order_id']);
+        $receipt = $this->purchaseService->receiveGoods($order, [
+            'receipt_date' => $data['received_date'] ?? now(),
+        ]);
+
+        if (!empty($data['raw_material_id']) && $data['quantity_received'] > 0) {
+            $material = \App\Models\RawMaterial::find($data['raw_material_id']);
+            app(\App\Services\InventoryService::class)->updateStock($material, 'in', $data['quantity_received']);
+        }
+
+        return response()->json($receipt->load('order.supplier', 'receiver'), 201);
     }
 
     public function receiveGoods(Request $request, PurchaseOrder $purchaseOrder): JsonResponse

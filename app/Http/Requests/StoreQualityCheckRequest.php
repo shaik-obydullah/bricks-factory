@@ -15,9 +15,11 @@ class StoreQualityCheckRequest extends FormRequest
     {
         return [
             'batch_id' => 'required|exists:production_batches,id',
-            'check_date' => 'required|date',
+            'check_date' => 'nullable|date',
             'inspector_id' => 'nullable|exists:users,id',
-            'status' => 'nullable|string|in:pending,passed,failed',
+            'inspector' => 'nullable|string',
+            'status' => 'nullable|string',
+            'result' => 'nullable|string',
             'notes' => 'nullable|string',
         ];
     }

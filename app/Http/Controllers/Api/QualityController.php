@@ -23,7 +23,29 @@ class QualityController extends Controller
 
     public function storeCheck(StoreQualityCheckRequest $request): JsonResponse
     {
-        $check = $this->qualityService->createCheck($request->validated());
+        $data = $request->validated();
+        $data['check_date'] = $data['check_date'] ?? now()->toDateString();
+
+        if (empty($data['inspector_id']) && !empty($data['inspector'])) {
+            $name = $data['inspector'];
+            $user = \App\Models\User::where('name', $name)->first()
+                ?? \App\Models\User::whereRaw('LOWER(name) = ?', [strtolower($name)])->first()
+                ?? \App\Models\User::whereRaw('LOWER(name) LIKE ?', [strtolower($name) . '%'])->first()
+                ?? \App\Models\User::whereRaw('LOWER(name) LIKE ?', ['% ' . strtolower($name) . '%'])->first();
+            $data['inspector_id'] = $user?->id;
+        }
+        unset($data['inspector']);
+
+        if (!empty($data['result']) && empty($data['status'])) {
+            $data['status'] = match (strtolower($data['result'])) {
+                'pass', 'passed' => 'passed',
+                'fail', 'failed' => 'failed',
+                default => 'pending',
+            };
+        }
+        unset($data['result']);
+
+        $check = $this->qualityService->createCheck($data);
         return response()->json($check, 201);
     }
 
@@ -68,5 +90,29 @@ class QualityController extends Controller
             'resolved_at' => now(),
         ]);
         return response()->json($defect);
+    }
+
+    public function updateDefect(Request $request, Defect $defect): JsonResponse
+    {
+        $defect->update($request->validate([
+            'batch_id' => 'nullable|exists:production_batches,id',
+            'type' => 'nullable|string|max:255',
+            'severity' => 'nullable|string|in:minor,low,medium,high,critical',
+            'description' => 'nullable|string',
+            'status' => 'nullable|string|in:open,in_progress,resolved,closed',
+        ]));
+        return response()->json($defect);
+    }
+
+    public function destroyDefect(Defect $defect): JsonResponse
+    {
+        $defect->delete();
+        return response()->json(['message' => 'Defect deleted']);
+    }
+
+    public function destroyCheck(QualityCheck $qualityCheck): JsonResponse
+    {
+        $qualityCheck->delete();
+        return response()->json(['message' => 'Quality check deleted']);
     }
 }

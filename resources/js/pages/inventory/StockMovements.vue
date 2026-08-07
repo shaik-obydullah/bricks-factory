@@ -30,7 +30,6 @@
             <th class="text-left px-4 py-3 font-medium">Type</th>
             <th class="text-left px-4 py-3 font-medium">Item</th>
             <th class="text-left px-4 py-3 font-medium">Quantity</th>
-            <th class="text-left px-4 py-3 font-medium">From/To</th>
             <th class="text-left px-4 py-3 font-medium">Reference</th>
           </tr>
         </thead>
@@ -38,11 +37,10 @@
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3">{{ item.created_at?.substring(0, 10) }}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="item.type === 'in' ? 'bg-green-100 text-green-800' : item.type === 'out' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">{{ item.type }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="item.movement_type === 'in' ? 'bg-green-100 text-green-800' : item.movement_type === 'out' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">{{ item.movement_type }}</span>
             </td>
-            <td class="px-4 py-3">{{ item.movable?.name || '-' }}</td>
+            <td class="px-4 py-3">{{ item.typeable?.name || '-' }}</td>
             <td class="px-4 py-3">{{ item.quantity }}</td>
-            <td class="px-4 py-3">{{ item.from_warehouse?.name || '-' }} → {{ item.to_warehouse?.name || '-' }}</td>
             <td class="px-4 py-3 text-xs">{{ item.reference || '-' }}</td>
           </tr>
         </tbody>

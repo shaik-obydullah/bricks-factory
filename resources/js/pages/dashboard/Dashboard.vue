@@ -117,11 +117,20 @@
           </div>
         </div>
 
-        <!-- Chart Placeholder -->
+        <!-- Monthly Production Chart -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <h3 class="text-lg font-semibold text-gray-800 mb-4">Monthly Production</h3>
-          <div class="h-48 flex items-center justify-center bg-gray-50 rounded-lg">
-            <p class="text-gray-400">Chart will be rendered here</p>
+          <div v-if="!monthlyProduction.length" class="h-48 flex items-center justify-center bg-gray-50 rounded-lg">
+            <p class="text-gray-400">No production data available.</p>
+          </div>
+          <div v-else class="h-48 flex items-end justify-between gap-2 px-2">
+            <div v-for="item in monthlyProduction" :key="item.month" class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+              <span class="text-[10px] text-gray-500 font-medium">{{ formatQty(item.total) }}</span>
+              <div class="w-full rounded-t-lg bg-indigo-500 hover:bg-indigo-600 transition-colors"
+                   :style="{ height: barHeight(item.total) }"
+                   :title="item.label + ': ' + item.total.toLocaleString()"></div>
+              <span class="text-xs text-gray-500 whitespace-nowrap">{{ item.label }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -137,10 +146,22 @@ const loading = ref(true)
 const error = ref('')
 const stats = ref({})
 const recentActivity = ref([])
+const monthlyProduction = ref([])
 
 function activityColor(type) {
   const colors = { production: 'bg-blue-500', inventory: 'bg-green-500', quality: 'bg-amber-500', sales: 'bg-purple-500' }
   return colors[type] || 'bg-gray-500'
+}
+
+function barHeight(total) {
+  const max = Math.max(...monthlyProduction.value.map(m => m.total), 1)
+  const pct = max > 0 ? (total / max) * 100 : 0
+  return Math.max(pct, 4) + '%'
+}
+
+function formatQty(total) {
+  if (total >= 1000) return (total / 1000).toFixed(1) + 'k'
+  return String(total)
 }
 
 onMounted(async () => {
@@ -148,6 +169,7 @@ onMounted(async () => {
     const { data } = await axios.get('/reports/dashboard')
     stats.value = data.data || data
     recentActivity.value = data.recent_activity || []
+    monthlyProduction.value = data.monthly_production || []
   } catch (e) {
     error.value = 'Failed to load dashboard data.'
   } finally {

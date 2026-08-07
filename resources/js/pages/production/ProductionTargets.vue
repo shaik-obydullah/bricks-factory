@@ -16,9 +16,8 @@
           <tr>
             <th class="text-left px-4 py-3 font-medium">Product</th>
             <th class="text-left px-4 py-3 font-medium">Target Quantity</th>
-            <th class="text-left px-4 py-3 font-medium">Period</th>
-            <th class="text-left px-4 py-3 font-medium">Start Date</th>
-            <th class="text-left px-4 py-3 font-medium">End Date</th>
+            <th class="text-left px-4 py-3 font-medium">Actual Quantity</th>
+            <th class="text-left px-4 py-3 font-medium">Target Date</th>
             <th class="text-right px-4 py-3 font-medium">Actions</th>
           </tr>
         </thead>
@@ -26,9 +25,8 @@
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3">{{ item.product?.name || '-' }}</td>
             <td class="px-4 py-3">{{ item.target_quantity }}</td>
-            <td class="px-4 py-3">{{ item.period }}</td>
-            <td class="px-4 py-3">{{ item.start_date }}</td>
-            <td class="px-4 py-3">{{ item.end_date }}</td>
+            <td class="px-4 py-3">{{ item.actual_quantity ?? 0 }}</td>
+            <td class="px-4 py-3">{{ item.target_date?.substring(0, 10) || '-' }}</td>
             <td class="px-4 py-3 text-right">
               <button @click="openForm(item)" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">Edit</button>
               <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
@@ -56,21 +54,8 @@
             <input v-model.number="form.target_quantity" type="number" min="1" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
-            <select v-model="form.period" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm">
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-            <input v-model="form.start_date" type="date" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-            <input v-model="form.end_date" type="date" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+            <label class="block text-sm font-medium text-gray-700 mb-1">Target Date</label>
+            <input v-model="form.target_date" type="date" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
           </div>
           <div class="flex justify-end gap-3 pt-2">
             <button type="button" @click="formVisible = false" class="px-4 py-2.5 text-sm text-gray-700 bg-gray-100 rounded-lg">Cancel</button>
@@ -108,7 +93,7 @@ const saving = ref(false)
 const formError = ref('')
 const deleteItem = ref(null)
 const deleting = ref(false)
-const form = reactive({ product_id: '', target_quantity: 1, period: 'monthly', start_date: '', end_date: '' })
+const form = reactive({ product_id: '', target_quantity: 1, target_date: '' })
 
 async function fetchData() {
   loading.value = true
@@ -124,9 +109,9 @@ function openForm(item) {
   editingItem.value = item
   if (item) {
     form.product_id = item.product_id; form.target_quantity = item.target_quantity
-    form.period = item.period; form.start_date = item.start_date; form.end_date = item.end_date
+    form.target_date = item.target_date?.substring(0, 10) || ''
   } else {
-    form.product_id = ''; form.target_quantity = 1; form.period = 'monthly'; form.start_date = ''; form.end_date = ''
+    form.product_id = ''; form.target_quantity = 1; form.target_date = ''
   }
   formVisible.value = true; formError.value = ''
 }

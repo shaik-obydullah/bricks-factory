@@ -59,8 +59,6 @@ class BulkTestDataSeeder extends Seeder
         $today = Carbon::today();
         $now = now();
 
-        $this->cleanup();
-
         $this->seedCustomers();
         $this->seedSuppliers();
         $employees = $this->seedEmployees();
@@ -75,28 +73,17 @@ class BulkTestDataSeeder extends Seeder
         $this->command?->info('Bulk test data seeded successfully.');
     }
 
-    protected function cleanup(): void
-    {
-        DB::table('stock_movements')->where('reference', 'like', 'BULK-MOV-%')->delete();
-        DB::table('purchase_orders')->where('order_number', 'like', 'BULK-PR-%')->delete();
-        DB::table('sales_orders')->where('order_number', 'like', 'BULK-SO-%')->delete();
-        DB::table('production_orders')->where('order_number', 'like', 'BULK-PO-%')->delete();
-        DB::table('employees')->where('employee_id', 'like', 'BEMP-%')->delete();
-        DB::table('employees')->where('employee_id', 'like', 'EMP-01%')->delete();
-        DB::table('suppliers')->where('email', 'like', 'supplier%@example.com')->delete();
-        DB::table('customers')->where('email', 'like', 'customer%@example.com')->delete();
-    }
-
     protected function seedCustomers(): void
     {
         $rows = [];
         $now = now();
-        for ($i = 0; $i < 500; $i++) {
+        $offset = Customer::query()->count();
+        for ($i = 0; $i < 110; $i++) {
             $rows[] = [
                 'name' => $this->firstNames[array_rand($this->firstNames)] . ' ' . $this->lastNames[array_rand($this->lastNames)],
                 'company' => $this->firstNames[array_rand($this->firstNames)] . ' ' . $this->companyNames[array_rand($this->companyNames)],
                 'phone' => '01' . random_int(0, 9) . rand(10000000, 99999999),
-                'email' => 'customer' . ($i + 1) . '@example.com',
+                'email' => 'customer' . ($offset + $i + 1) . '@example.com',
                 'address' => 'House ' . rand(1, 500) . ', Road ' . rand(1, 30) . ', ',
                 'city' => $this->cityNames[array_rand($this->cityNames)],
                 'created_at' => $now,
@@ -113,12 +100,13 @@ class BulkTestDataSeeder extends Seeder
         $materials = ['Clay', 'Sand', 'Cement', 'Fly Ash', 'Water', 'Fuel', 'Chemicals', 'Packaging', 'Tiles', 'Aggregates'];
         $rows = [];
         $now = now();
-        for ($i = 0; $i < 150; $i++) {
+        $offset = Supplier::query()->count();
+        for ($i = 0; $i < 110; $i++) {
             $rows[] = [
                 'name' => $materials[array_rand($materials)] . ' Supply Co ' . ($i + 1),
                 'company' => $this->companyNames[array_rand($this->companyNames)] . ' Ltd',
                 'phone' => '01' . random_int(0, 9) . rand(10000000, 99999999),
-                'email' => 'supplier' . ($i + 1) . '@example.com',
+                'email' => 'supplier' . ($offset + $i + 1) . '@example.com',
                 'address' => 'Plot ' . rand(1, 999) . ', Industrial Area',
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -136,10 +124,11 @@ class BulkTestDataSeeder extends Seeder
         $employeeIds = [];
         $rows = [];
         $now = now();
-        for ($i = 0; $i < 200; $i++) {
+        $seqBase = Employee::query()->count() + 1;
+        for ($i = 0; $i < 110; $i++) {
             $join = Carbon::today()->subMonths(rand(3, 48));
             $rows[] = [
-                'employee_id' => 'BEMP-' . str_pad((string) ($i + 1), 5, '0', STR_PAD_LEFT),
+                'employee_id' => 'BEMP-' . str_pad((string) ($seqBase + $i), 5, '0', STR_PAD_LEFT),
                 'name' => $this->firstNames[array_rand($this->firstNames)] . ' ' . $this->lastNames[array_rand($this->lastNames)],
                 'phone' => '01' . random_int(0, 9) . rand(10000000, 99999999),
                 'email' => 'emp' . ($i + 1) . '@bricks.com',
@@ -168,7 +157,7 @@ class BulkTestDataSeeder extends Seeder
         $rows = [];
         $now = now();
         $total = 0;
-        for ($d = 1; $d <= 120; $d++) {
+        for ($d = 1; $d <= 30; $d++) {
             $date = $today->copy()->subDays($d);
             if ($date->isFriday()) {
                 continue;
@@ -210,7 +199,7 @@ class BulkTestDataSeeder extends Seeder
         $orderCounter = 0;
         $chunkCount = 0;
 
-        for ($i = 0; $i < 1500; $i++) {
+        for ($i = 0; $i < 110; $i++) {
             $orderCounter++;
             $chunkCount++;
             $productId = rand(1, 5);
@@ -296,8 +285,13 @@ class BulkTestDataSeeder extends Seeder
         if (!$batchRows) {
             return;
         }
-        ProductionBatch::insert($batchRows);
-        $start = ProductionBatch::max('id') - count($batchRows) + 1;
+        $start = null;
+        foreach (array_chunk($batchRows, 500) as $chunk) {
+            ProductionBatch::insert($chunk);
+            if ($start === null) {
+                $start = (int) DB::getPdo()->lastInsertId();
+            }
+        }
         foreach (range($start, $start + count($batchRows) - 1) as $id) {
             $batchIds[] = $id;
         }
@@ -321,7 +315,7 @@ class BulkTestDataSeeder extends Seeder
         $orderRows = [];
         $orderCounter = 0;
 
-        for ($i = 0; $i < 2000; $i++) {
+        for ($i = 0; $i < 110; $i++) {
             $orderCounter++;
             $daysAgo = rand(0, 180);
             $status = $statuses[array_rand($statuses)];
@@ -454,7 +448,7 @@ class BulkTestDataSeeder extends Seeder
         $orderRows = [];
         $orderCounter = 0;
 
-        for ($i = 0; $i < 800; $i++) {
+        for ($i = 0; $i < 110; $i++) {
             $orderCounter++;
             $daysAgo = rand(0, 180);
             $status = $statuses[array_rand($statuses)];
@@ -552,20 +546,18 @@ class BulkTestDataSeeder extends Seeder
     protected function seedQualityChecks(array $batchIds, $now): void
     {
         $checkRows = [];
-        $checkItemRows = [];
+        $checkData = [];
         $defectRows = [];
         $inspectors = \App\Models\User::query()->pluck('id')->all();
         if (!$inspectors) {
             $inspectors = [$this->adminId];
         }
 
-        $nextCheckId = (QualityCheck::max('id') ?? 0) + 1;
         $batches = ProductionBatch::whereIn('id', $batchIds)->where('status', 'completed')->get(['id', 'start_time', 'quantity_rejected']);
         foreach ($batches as $idx => $batch) {
             if ($idx % 3 !== 0) {
                 continue;
             }
-            $checkId = $nextCheckId + count($checkRows);
             $checkRows[] = [
                 'batch_id' => $batch->id,
                 'check_date' => $batch->start_time ? Carbon::parse($batch->start_time)->toDateString() : Carbon::today()->toDateString(),
@@ -576,36 +568,52 @@ class BulkTestDataSeeder extends Seeder
                 'updated_at' => $now,
             ];
             $dimensionOk = ($batch->id % 5) !== 0;
+            $checkData[] = [
+                'dimension_ok' => $dimensionOk,
+                'strength' => round(10.5 + ($batch->id % 5), 1),
+                'absorption' => round(12 + ($batch->id % 3), 1),
+                'rejected' => $batch->quantity_rejected,
+                'start_time' => $batch->start_time,
+            ];
+        }
+
+        $checkStart = null;
+        foreach (array_chunk($checkRows, 500) as $chunk) {
+            QualityCheck::insert($chunk);
+            if ($checkStart === null) {
+                $checkStart = (int) DB::getPdo()->lastInsertId();
+            }
+        }
+        $checkItemRows = [];
+        foreach ($checkData as $i => $data) {
+            $checkId = $checkStart + $i;
             $checkItemRows[] = [
-                'check_id' => $checkId, 'parameter' => 'Compressive Strength', 'expected_value' => '>= 10 MPa', 'actual_value' => round(10.5 + ($batch->id % 5), 1) . ' MPa', 'status' => 'passed',
+                'check_id' => $checkId, 'parameter' => 'Compressive Strength', 'expected_value' => '>= 10 MPa', 'actual_value' => $data['strength'] . ' MPa', 'status' => 'passed',
                 'created_at' => $now, 'updated_at' => $now,
             ];
             $checkItemRows[] = [
-                'check_id' => $checkId, 'parameter' => 'Dimensions', 'expected_value' => '240x115x70 mm', 'actual_value' => $dimensionOk ? '240x115x70 mm' : '238x115x70 mm', 'status' => $dimensionOk ? 'passed' : 'failed',
+                'check_id' => $checkId, 'parameter' => 'Dimensions', 'expected_value' => '240x115x70 mm', 'actual_value' => $data['dimension_ok'] ? '240x115x70 mm' : '238x115x70 mm', 'status' => $data['dimension_ok'] ? 'passed' : 'failed',
                 'created_at' => $now, 'updated_at' => $now,
             ];
             $checkItemRows[] = [
-                'check_id' => $checkId, 'parameter' => 'Water Absorption', 'expected_value' => '<= 15%', 'actual_value' => round(12 + ($batch->id % 3), 1) . '%', 'status' => 'passed',
+                'check_id' => $checkId, 'parameter' => 'Water Absorption', 'expected_value' => '<= 15%', 'actual_value' => $data['absorption'] . '%', 'status' => 'passed',
                 'created_at' => $now, 'updated_at' => $now,
             ];
-            if ($batch->quantity_rejected > 0) {
+            if ($data['rejected'] > 0) {
                 $defectRows[] = [
-                    'batch_id' => $batch->id,
+                    'batch_id' => $checkRows[$i]['batch_id'],
                     'type' => 'Cracked surface',
                     'severity' => 'medium',
-                    'description' => round($batch->quantity_rejected * 0.5) . ' pcs rejected for surface cracks.',
+                    'description' => round($data['rejected'] * 0.5) . ' pcs rejected for surface cracks.',
                     'status' => 'resolved',
                     'resolved_by' => $this->adminId,
-                    'resolved_at' => Carbon::parse($batch->start_time)->addDay(),
+                    'resolved_at' => $data['start_time'] ? Carbon::parse($data['start_time'])->addDay() : null,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
             }
         }
 
-        foreach (array_chunk($checkRows, 500) as $chunk) {
-            QualityCheck::insert($chunk);
-        }
         foreach (array_chunk($checkItemRows, 500) as $chunk) {
             QualityCheckItem::insert($chunk);
         }
@@ -618,14 +626,15 @@ class BulkTestDataSeeder extends Seeder
     {
         $productCount = \App\Models\Product::count();
         $rows = [];
-        for ($i = 0; $i < 3000; $i++) {
+        $offset = StockMovement::query()->count();
+        for ($i = 0; $i < 110; $i++) {
             $type = rand(0, 1) === 0 ? 'in' : 'out';
             $rows[] = [
                 'typeable_type' => 'App\\Models\\Product',
                 'typeable_id' => rand(1, $productCount),
                 'movement_type' => $type,
                 'quantity' => rand(500, 50000),
-                'reference' => 'BULK-MOV-' . ($i + 1),
+                'reference' => 'BULK-MOV-' . ($offset + $i + 1),
                 'notes' => 'Bulk test stock movement',
                 'created_by' => $this->adminId,
                 'created_at' => $now,

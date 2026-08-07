@@ -36,6 +36,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('production/targets', [ProductionController::class, 'targets']);
     Route::post('production/targets', [ProductionController::class, 'storeTarget']);
 
+    // Production (kebab-case paths used by the SPA)
+    Route::get('production-orders', [ProductionController::class, 'index']);
+    Route::post('production-orders', [ProductionController::class, 'store']);
+    Route::get('production-orders/{productionOrder}', [ProductionController::class, 'show']);
+    Route::put('production-orders/{productionOrder}', [ProductionController::class, 'update']);
+    Route::delete('production-orders/{productionOrder}', [ProductionController::class, 'destroy']);
+    Route::get('production-batches', [ProductionController::class, 'batchesIndex']);
+    Route::post('production-batches', [ProductionController::class, 'startBatch']);
+    Route::put('production-batches/{productionBatch}/complete', [ProductionController::class, 'completeBatch']);
+    Route::patch('production-batches/{productionBatch}/complete', [ProductionController::class, 'completeBatch']);
+    Route::get('production-targets', [ProductionController::class, 'targets']);
+    Route::post('production-targets', [ProductionController::class, 'storeTarget']);
+    Route::put('production-targets/{productionTarget}', [ProductionController::class, 'updateTarget']);
+    Route::delete('production-targets/{productionTarget}', [ProductionController::class, 'destroyTarget']);
+
     // Inventory
     Route::get('products', [InventoryController::class, 'products']);
     Route::post('products', [InventoryController::class, 'storeProduct']);
@@ -62,6 +77,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('quality/defects', [QualityController::class, 'storeDefect']);
     Route::put('quality/defects/{defect}/resolve', [QualityController::class, 'resolveDefect']);
 
+    // Quality (kebab-case paths used by the SPA)
+    Route::get('quality-checks', [QualityController::class, 'checks']);
+    Route::post('quality-checks', [QualityController::class, 'storeCheck']);
+    Route::get('quality-checks/{qualityCheck}', [QualityController::class, 'showCheck']);
+    Route::delete('quality-checks/{qualityCheck}', [QualityController::class, 'destroyCheck']);
+    Route::get('defects', [QualityController::class, 'defects']);
+    Route::post('defects', [QualityController::class, 'storeDefect']);
+    Route::put('defects/{defect}', [QualityController::class, 'updateDefect']);
+    Route::delete('defects/{defect}', [QualityController::class, 'destroyDefect']);
+
     // Sales
     Route::get('customers', [SalesController::class, 'customers']);
     Route::post('customers', [SalesController::class, 'storeCustomer']);
@@ -75,6 +100,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('sales/orders/{salesOrder}/invoice', [SalesController::class, 'generateInvoice']);
     Route::post('sales/invoices/{invoice}/pay', [SalesController::class, 'processPayment']);
 
+    // Sales (kebab-case paths used by the SPA)
+    Route::get('sales-orders', [SalesController::class, 'orders']);
+    Route::post('sales-orders', [SalesController::class, 'storeOrder']);
+    Route::get('sales-orders/{salesOrder}', [SalesController::class, 'showOrder']);
+    Route::put('sales-orders/{salesOrder}', [SalesController::class, 'updateOrder']);
+    Route::delete('sales-orders/{salesOrder}', [SalesController::class, 'destroyOrder']);
+    Route::get('invoices', [SalesController::class, 'invoices']);
+    Route::post('invoices', [SalesController::class, 'storeInvoice']);
+    Route::put('invoices/{invoice}', [SalesController::class, 'updateInvoice']);
+    Route::delete('invoices/{invoice}', [SalesController::class, 'destroyInvoice']);
+    Route::get('payments', [SalesController::class, 'payments']);
+    Route::post('payments', [SalesController::class, 'storePayment']);
+    Route::delete('payments/{payment}', [SalesController::class, 'destroyPayment']);
+
     // Purchase
     Route::get('suppliers', [PurchaseController::class, 'suppliers']);
     Route::post('suppliers', [PurchaseController::class, 'storeSupplier']);
@@ -85,6 +124,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('purchase/orders', [PurchaseController::class, 'storeOrder']);
     Route::get('purchase/orders/{purchaseOrder}', [PurchaseController::class, 'showOrder']);
     Route::post('purchase/orders/{purchaseOrder}/receive', [PurchaseController::class, 'receiveGoods']);
+
+    // Purchase (kebab-case paths used by the SPA)
+    Route::get('purchase-orders', [PurchaseController::class, 'orders']);
+    Route::post('purchase-orders', [PurchaseController::class, 'storeOrder']);
+    Route::get('purchase-orders/{purchaseOrder}', [PurchaseController::class, 'showOrder']);
+    Route::put('purchase-orders/{purchaseOrder}', [PurchaseController::class, 'updateOrder']);
+    Route::delete('purchase-orders/{purchaseOrder}', [PurchaseController::class, 'destroyOrder']);
+    Route::get('goods-receipts', [PurchaseController::class, 'goodsReceipts']);
+    Route::post('goods-receipts', [PurchaseController::class, 'storeGoodsReceipt']);
 
     // Employees
     Route::get('employees', [EmployeeController::class, 'employees']);

@@ -4,10 +4,10 @@
       <div class="flex items-center gap-3">
         <select v-model="filters.status" class="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white" @change="fetchData">
           <option value="">All Statuses</option>
-          <option value="pending">Pending</option>
+          <option value="draft">Draft</option>
+          <option value="confirmed">Confirmed</option>
           <option value="in_progress">In Progress</option>
           <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
         </select>
         <input v-model="filters.date_from" type="date" class="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white" @change="fetchData" />
         <input v-model="filters.date_to" type="date" class="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white" @change="fetchData" />
@@ -82,7 +82,7 @@ const deleting = ref(false)
 const filters = reactive({ status: '', date_from: '', date_to: '' })
 
 function statusClass(s) {
-  const map = { pending: 'bg-yellow-100 text-yellow-800', in_progress: 'bg-blue-100 text-blue-800', completed: 'bg-green-100 text-green-800', cancelled: 'bg-red-100 text-red-800' }
+  const map = { draft: 'bg-gray-100 text-gray-700', confirmed: 'bg-yellow-100 text-yellow-800', in_progress: 'bg-blue-100 text-blue-800', completed: 'bg-green-100 text-green-800' }
   return map[s] || 'bg-gray-100 text-gray-800'
 }
 function priorityClass(p) {

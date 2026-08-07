@@ -26,13 +26,15 @@
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-mono text-xs">#{{ item.id }}</td>
-            <td class="px-4 py-3">#{{ item.production_order_id }}</td>
+            <td class="px-4 py-3">
+              <router-link :to="`/production/orders/${item.order_id}`" class="text-indigo-600 hover:text-indigo-800">#{{ item.order_id }}</router-link>
+            </td>
             <td class="px-4 py-3">{{ item.machine?.name || '-' }}</td>
-            <td class="px-4 py-3">{{ item.shift || '-' }}</td>
-            <td class="px-4 py-3">{{ item.quantity }}</td>
+            <td class="px-4 py-3">{{ item.shift?.name || '-' }}</td>
+            <td class="px-4 py-3">{{ item.quantity_produced }}</td>
             <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.status }}</span></td>
             <td class="px-4 py-3 text-right">
-              <button v-if="item.status === 'in_progress'" @click="completeBatch(item)" class="text-green-600 hover:text-green-800 text-sm font-medium">Complete</button>
+              <button v-if="item.status === 'running'" @click="completeBatch(item)" class="text-green-600 hover:text-green-800 text-sm font-medium">Complete</button>
             </td>
           </tr>
         </tbody>
@@ -63,7 +65,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Shift</label>
             <select v-model="form.shift" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
               <option value="morning">Morning</option>
-              <option value="afternoon">Afternoon</option>
+              <option value="evening">Evening</option>
               <option value="night">Night</option>
             </select>
           </div>
@@ -98,7 +100,7 @@ const machines = ref([])
 const form = reactive({ production_order_id: '', machine_id: '', shift: 'morning', quantity: 1 })
 
 function statusClass(s) {
-  const map = { pending: 'bg-yellow-100 text-yellow-800', in_progress: 'bg-blue-100 text-blue-800', completed: 'bg-green-100 text-green-800', cancelled: 'bg-red-100 text-red-800' }
+  const map = { pending: 'bg-yellow-100 text-yellow-800', running: 'bg-blue-100 text-blue-800', completed: 'bg-green-100 text-green-800', cancelled: 'bg-red-100 text-red-800' }
   return map[s] || 'bg-gray-100 text-gray-800'
 }
 
@@ -130,7 +132,7 @@ async function createBatch() {
   formError.value = ''
   try {
     const { data } = await axios.post('/production-batches', form)
-    items.value.push(data.data || data)
+    items.value.unshift(data.data || data)
     showForm.value = false
     form.production_order_id = ''; form.machine_id = ''; form.quantity = 1
   } catch (e) {

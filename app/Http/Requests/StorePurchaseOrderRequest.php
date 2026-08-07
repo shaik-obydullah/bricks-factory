@@ -20,7 +20,8 @@ class StorePurchaseOrderRequest extends FormRequest
             'status' => 'nullable|string|in:draft,confirmed,in_progress,completed,cancelled,received',
             'notes' => 'nullable|string',
             'items' => 'nullable|array',
-            'items.*.material_id' => 'required_with:items|exists:raw_materials,id',
+            'items.*.material_id' => 'nullable|exists:raw_materials,id',
+            'items.*.raw_material_id' => 'nullable|exists:raw_materials,id',
             'items.*.quantity' => 'required_with:items|numeric|min:0',
             'items.*.unit_price' => 'required_with:items|numeric|min:0',
         ];

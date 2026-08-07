@@ -17,9 +17,14 @@ class ProductionController extends Controller
 {
     public function __construct(protected ProductionService $productionService) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $orders = ProductionOrder::with('product', 'batches')->latest()->paginate(20);
+        $orders = ProductionOrder::with('product', 'batches')
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('planned_date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('planned_date', '<=', $request->date_to))
+            ->latest()
+            ->paginate(20);
         return response()->json($orders);
     }
 
@@ -55,9 +60,31 @@ class ProductionController extends Controller
         return response()->json($batches);
     }
 
+    public function batchesIndex(): JsonResponse
+    {
+        $batches = ProductionBatch::with('order.product', 'shift', 'machine', 'operator')
+            ->latest()
+            ->paginate(20);
+
+        return response()->json($batches);
+    }
+
     public function startBatch(StoreBatchRequest $request): JsonResponse
     {
-        $batch = $this->productionService->startBatch($request->validated());
+        $data = $request->validated();
+        $data['order_id'] = $data['order_id'] ?? $data['production_order_id'] ?? null;
+        unset($data['production_order_id']);
+
+        if (empty($data['shift_id']) && !empty($data['shift'])) {
+            $shift = \App\Models\Shift::whereRaw('LOWER(name) = ?', [strtolower($data['shift'])])->first();
+            $data['shift_id'] = $shift?->id;
+        }
+        unset($data['shift']);
+
+        $data['quantity_produced'] = $data['quantity'] ?? 0;
+        unset($data['quantity']);
+
+        $batch = $this->productionService->startBatch($data);
         return response()->json($batch, 201);
     }
 
@@ -96,12 +123,36 @@ class ProductionController extends Controller
 
     public function storeTarget(Request $request): JsonResponse
     {
-        $target = ProductionTarget::create($request->validate([
+        $data = $request->validate([
             'product_id' => 'required|exists:products,id',
-            'target_date' => 'required|date',
+            'target_date' => 'nullable|date',
+            'start_date' => 'nullable|date',
             'target_quantity' => 'required|numeric|min:0',
             'actual_quantity' => 'nullable|numeric|min:0',
-        ]));
-        return response()->json($target, 201);
+        ]);
+        $data['target_date'] = $data['target_date'] ?? $data['start_date'] ?? now();
+        $target = ProductionTarget::create($data);
+        return response()->json($target->load('product'), 201);
+    }
+
+    public function updateTarget(Request $request, ProductionTarget $productionTarget): JsonResponse
+    {
+        $data = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'target_date' => 'nullable|date',
+            'start_date' => 'nullable|date',
+            'target_quantity' => 'required|numeric|min:0',
+            'actual_quantity' => 'nullable|numeric|min:0',
+        ]);
+        $data['target_date'] = $data['target_date'] ?? $data['start_date'] ?? $productionTarget->target_date;
+        unset($data['start_date']);
+        $productionTarget->update($data);
+        return response()->json($productionTarget->load('product'));
+    }
+
+    public function destroyTarget(ProductionTarget $productionTarget): JsonResponse
+    {
+        $productionTarget->delete();
+        return response()->json(['message' => 'Target deleted']);
     }
 }

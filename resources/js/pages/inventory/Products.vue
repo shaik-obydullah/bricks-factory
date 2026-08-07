@@ -19,7 +19,7 @@
             <th class="text-left px-4 py-3 font-medium">Name</th>
             <th class="text-left px-4 py-3 font-medium">SKU</th>
             <th class="text-left px-4 py-3 font-medium">Category</th>
-            <th class="text-left px-4 py-3 font-medium">Price</th>
+            <th class="text-left px-4 py-3 font-medium">Type</th>
             <th class="text-left px-4 py-3 font-medium">Stock</th>
             <th class="text-right px-4 py-3 font-medium">Actions</th>
           </tr>
@@ -27,10 +27,16 @@
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-medium">{{ item.name }}</td>
-            <td class="px-4 py-3 font-mono text-xs">{{ item.sku || '-' }}</td>
+            <td class="px-4 py-3 font-mono text-xs">{{ item.code || '-' }}</td>
             <td class="px-4 py-3">{{ item.category?.name || '-' }}</td>
-            <td class="px-4 py-3">${{ Number(item.price || 0).toFixed(2) }}</td>
-            <td class="px-4 py-3">{{ item.current_stock ?? '-' }}</td>
+            <td class="px-4 py-3 capitalize">{{ item.type || '-' }}</td>
+            <td class="px-4 py-3">
+              <span v-if="appStore.selectedWarehouse">
+                {{ warehouseStock(item) }}
+              </span>
+              <span v-else>{{ totalStock(item) }}</span>
+              <span v-if="warehousesFor(item).length" class="ml-1 text-xs text-gray-400">/ {{ warehousesFor(item).length }} wh</span>
+            </td>
             <td class="px-4 py-3 text-right">
               <router-link :to="`/inventory/products/${item.id}`" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">View</router-link>
               <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
@@ -54,9 +60,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import axios from '@/utils/axios'
+import { useAppStore } from '@/stores/app'
 
+const appStore = useAppStore()
 const items = ref([])
 const loading = ref(true)
 const error = ref('')
@@ -70,13 +78,29 @@ async function fetchData() {
   try {
     const params = {}
     if (search.value) params.search = search.value
+    if (appStore.selectedWarehouse) params.warehouse_id = appStore.selectedWarehouse
     const { data } = await axios.get('/products', { params })
     items.value = data.data || data
   } catch (e) { error.value = 'Failed to load products.' }
   finally { loading.value = false }
 }
 
+watch(() => appStore.selectedWarehouse, fetchData)
+
 function confirmDelete(item) { deleteItem.value = item }
+
+function totalStock(item) {
+  return (item.product_stocks || []).reduce((sum, s) => sum + Number(s.quantity || 0), 0)
+}
+
+function warehouseStock(item) {
+  return totalStock(item)
+}
+
+function warehousesFor(item) {
+  return (item.product_stocks || []).filter(s => Number(s.quantity || 0) > 0)
+}
+
 async function handleDelete() {
   deleting.value = true
   try {

@@ -24,11 +24,11 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3">{{ item.created_at?.substring(0, 10) }}</td>
+            <td class="px-4 py-3">{{ item.check_date || item.created_at?.substring(0, 10) }}</td>
             <td class="px-4 py-3">#{{ item.batch_id }}</td>
-            <td class="px-4 py-3">{{ item.inspector || '-' }}</td>
+            <td class="px-4 py-3">{{ item.inspector?.name || item.inspector || '-' }}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="resultClass(item.result)">{{ item.result }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="resultClass(item.status)">{{ item.status }}</span>
             </td>
             <td class="px-4 py-3 max-w-xs truncate">{{ item.notes || '-' }}</td>
             <td class="px-4 py-3 text-right">
@@ -49,7 +49,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Batch</label>
             <select v-model="form.batch_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm">
               <option value="">Select Batch</option>
-              <option v-for="b in batches" :key="b.id" :value="b.id">#{{ b.id }} - {{ b.production_order?.product?.name || '' }}</option>
+              <option v-for="b in batches" :key="b.id" :value="b.id">#{{ b.id }} - {{ b.order?.product?.name || '' }}</option>
             </select>
           </div>
           <div>
@@ -105,7 +105,7 @@ const deleting = ref(false)
 const form = reactive({ batch_id: '', inspector: '', result: 'pass', notes: '' })
 
 function resultClass(r) {
-  const map = { pass: 'bg-green-100 text-green-800', fail: 'bg-red-100 text-red-800', conditional: 'bg-yellow-100 text-yellow-800' }
+  const map = { pass: 'bg-green-100 text-green-800', passed: 'bg-green-100 text-green-800', fail: 'bg-red-100 text-red-800', failed: 'bg-red-100 text-red-800', conditional: 'bg-yellow-100 text-yellow-800', pending: 'bg-yellow-100 text-yellow-800' }
   return map[r] || 'bg-gray-100 text-gray-800'
 }
 

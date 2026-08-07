@@ -37,8 +37,8 @@
             <tr v-for="b in item.batches" :key="b.id" class="hover:bg-gray-50">
               <td class="px-4 py-3 font-mono text-xs">#{{ b.id }}</td>
               <td class="px-4 py-3">{{ b.machine?.name || '-' }}</td>
-              <td class="px-4 py-3">{{ b.shift || '-' }}</td>
-              <td class="px-4 py-3">{{ b.quantity }}</td>
+              <td class="px-4 py-3">{{ b.shift?.name || '-' }}</td>
+              <td class="px-4 py-3">{{ b.quantity_produced }}</td>
               <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(b.status)">{{ b.status }}</span></td>
             </tr>
           </tbody>

@@ -15,6 +15,14 @@
           <input v-model="form.sku" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
         </div>
         <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+          <select v-model="form.type" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm">
+            <option value="">Select Type</option>
+            <option value="brick">Brick</option>
+            <option value="block">Block</option>
+          </select>
+        </div>
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
           <select v-model="form.category_id" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm">
             <option value="">Select Category</option>
@@ -22,8 +30,8 @@
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Price</label>
-          <input v-model.number="form.price" type="number" step="0.01" min="0" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+          <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+          <input v-model="form.unit" placeholder="e.g. pcs" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -51,7 +59,7 @@ const isEdit = ref(false)
 const saving = ref(false)
 const error = ref('')
 const categories = ref([])
-const form = reactive({ name: '', sku: '', category_id: '', price: 0, description: '' })
+const form = reactive({ name: '', sku: '', type: '', category_id: '', unit: '', description: '' })
 
 onMounted(async () => {
   try {

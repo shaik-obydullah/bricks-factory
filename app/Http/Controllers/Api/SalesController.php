@@ -67,6 +67,45 @@ class SalesController extends Controller
         return response()->json($salesOrder);
     }
 
+    public function updateOrder(StoreSalesOrderRequest $request, SalesOrder $salesOrder): JsonResponse
+    {
+        $data = $request->validated();
+
+        $salesOrder = \Illuminate\Support\Facades\DB::transaction(function () use ($salesOrder, $data) {
+            $salesOrder->update([
+                'customer_id' => $data['customer_id'],
+                'order_date' => $data['order_date'],
+                'delivery_date' => $data['delivery_date'] ?? null,
+                'status' => $data['status'] ?? $salesOrder->status,
+                'notes' => $data['notes'] ?? null,
+                'discount' => $data['discount'] ?? $salesOrder->discount,
+                'tax' => $data['tax'] ?? $salesOrder->tax,
+            ]);
+
+            if (!empty($data['items'])) {
+                $salesOrder->items()->delete();
+                foreach ($data['items'] as $item) {
+                    $salesOrder->items()->create($item);
+                }
+                $total = $salesOrder->items->sum('total');
+                $salesOrder->update([
+                    'total_amount' => $total,
+                    'final_amount' => $total - $salesOrder->discount + $salesOrder->tax,
+                ]);
+            }
+
+            return $salesOrder;
+        });
+
+        return response()->json($salesOrder->load('customer', 'items.product'));
+    }
+
+    public function destroyOrder(SalesOrder $salesOrder): JsonResponse
+    {
+        $salesOrder->delete();
+        return response()->json(['message' => 'Sales order deleted']);
+    }
+
     public function invoices(): JsonResponse
     {
         $invoices = Invoice::with('order.customer', 'payments')->latest()->paginate(20);
@@ -88,5 +127,72 @@ class SalesController extends Controller
             'notes' => 'nullable|string',
         ]));
         return response()->json($payment, 201);
+    }
+
+    public function storeInvoice(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'sales_order_id' => 'required|exists:sales_orders,id',
+            'invoice_date' => 'nullable|date',
+            'status' => 'nullable|string|in:draft,sent,paid,overdue,cancelled',
+        ]);
+
+        $order = SalesOrder::findOrFail($data['sales_order_id']);
+        $invoice = $this->salesService->generateInvoice($order, [
+            'invoice_date' => $data['invoice_date'] ?? now(),
+        ]);
+        $invoice->update(['status' => $data['status'] ?? 'draft']);
+
+        return response()->json($invoice->load('order.customer', 'payments'), 201);
+    }
+
+    public function updateInvoice(Request $request, Invoice $invoice): JsonResponse
+    {
+        $invoice->update($request->validate([
+            'sales_order_id' => 'nullable|exists:sales_orders,id',
+            'invoice_date' => 'nullable|date',
+            'due_date' => 'nullable|date',
+            'status' => 'nullable|string|in:draft,sent,paid,overdue,cancelled',
+        ]));
+        return response()->json($invoice->load('order.customer', 'payments'));
+    }
+
+    public function destroyInvoice(Invoice $invoice): JsonResponse
+    {
+        $invoice->delete();
+        return response()->json(['message' => 'Invoice deleted']);
+    }
+
+    public function payments(): JsonResponse
+    {
+        $payments = Payment::with('invoice.order.customer')->latest()->paginate(20);
+        return response()->json($payments);
+    }
+
+    public function storePayment(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'invoice_id' => 'required|exists:invoices,id',
+            'amount' => 'required|numeric|min:0',
+            'payment_date' => 'nullable|date',
+            'payment_method' => 'nullable|string',
+            'reference' => 'nullable|string',
+        ]);
+
+        $invoice = Invoice::findOrFail($data['invoice_id']);
+        $payment = $this->salesService->processPayment($invoice, [
+            'payment_date' => $data['payment_date'] ?? now(),
+            'amount' => $data['amount'],
+            'method' => $data['payment_method'] ?? 'cash',
+            'reference' => $data['reference'] ?? null,
+        ]);
+
+        return response()->json($payment->load('invoice.order.customer'), 201);
+    }
+
+    public function destroyPayment(Payment $payment): JsonResponse
+    {
+        $payment->delete();
+        return response()->json(['message' => 'Payment deleted']);
     }
 }

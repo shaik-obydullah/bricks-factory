@@ -27,8 +27,8 @@
             <td class="px-4 py-3 font-medium">{{ item.name }}</td>
             <td class="px-4 py-3">{{ item.type || '-' }}</td>
             <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.status }}</span></td>
-            <td class="px-4 py-3">{{ item.last_maintenance || '-' }}</td>
-            <td class="px-4 py-3">{{ item.next_maintenance || '-' }}</td>
+            <td class="px-4 py-3">{{ item.last_maintenance?.slice(0, 10) || '-' }}</td>
+            <td class="px-4 py-3">{{ item.next_maintenance?.slice(0, 10) || '-' }}</td>
             <td class="px-4 py-3 text-right">
               <button @click="openForm(item)" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">Edit</button>
               <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
@@ -126,7 +126,7 @@ function openForm(item) {
   editingItem.value = item
   if (item) {
     form.name = item.name; form.type = item.type || ''; form.status = item.status
-    form.last_maintenance = item.last_maintenance || ''; form.next_maintenance = item.next_maintenance || ''
+    form.last_maintenance = item.last_maintenance?.slice(0, 10) || ''; form.next_maintenance = item.next_maintenance?.slice(0, 10) || ''
   } else {
     form.name = ''; form.type = ''; form.status = 'active'; form.last_maintenance = ''; form.next_maintenance = ''
   }

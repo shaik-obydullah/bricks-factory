@@ -32,7 +32,7 @@ class ProductionService
 
         $batch->order->update(['status' => 'in_progress']);
 
-        return $batch;
+        return $batch->load(['order.product', 'shift', 'machine', 'operator']);
     }
 
     public function completeBatch(ProductionBatch $batch, array $data): ProductionBatch

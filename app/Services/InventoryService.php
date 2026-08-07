@@ -12,25 +12,65 @@ class InventoryService
 {
     public function updateStock($typeable, string $movementType, float $quantity, array $extra = []): StockMovement
     {
-        $movement = StockMovement::create([
-            'typeable_type' => get_class($typeable),
-            'typeable_id' => $typeable->id,
-            'movement_type' => $movementType,
-            'quantity' => $quantity,
-            'reference' => $extra['reference'] ?? null,
-            'notes' => $extra['notes'] ?? null,
-            'created_by' => $extra['created_by'] ?? auth()->id(),
-        ]);
+        $movement = DB::transaction(function () use ($typeable, $movementType, $quantity, $extra) {
+            $movement = StockMovement::create([
+                'typeable_type' => get_class($typeable),
+                'typeable_id' => $typeable->id,
+                'movement_type' => $movementType,
+                'quantity' => $quantity,
+                'reference' => $extra['reference'] ?? null,
+                'notes' => $extra['notes'] ?? null,
+                'created_by' => $extra['created_by'] ?? auth()->id(),
+            ]);
 
-        if ($typeable instanceof RawMaterial) {
-            if ($movementType === 'in') {
-                $typeable->increment('current_stock', $quantity);
-            } else {
-                $typeable->decrement('current_stock', $quantity);
+            if ($typeable instanceof RawMaterial) {
+                if ($movementType === 'in') {
+                    $typeable->increment('current_stock', $quantity);
+                } elseif ($movementType === 'out') {
+                    $typeable->decrement('current_stock', $quantity);
+                }
             }
-        }
+
+            if ($typeable instanceof Product) {
+                $this->adjustProductStock($typeable, $movementType, $quantity, $extra);
+            }
+
+            return $movement;
+        });
 
         return $movement;
+    }
+
+    protected function adjustProductStock(Product $product, string $movementType, float $quantity, array $extra): void
+    {
+        $fromWarehouseId = $extra['from_warehouse_id'] ?? null;
+        $toWarehouseId = $extra['to_warehouse_id'] ?? null;
+
+        if ($movementType === 'transfer' && $fromWarehouseId && $toWarehouseId) {
+            $this->stockFor($product, $fromWarehouseId)?->decrement('quantity', $quantity);
+            $this->stockFor($product, $toWarehouseId)?->increment('quantity', $quantity);
+            return;
+        }
+
+        $warehouseId = $fromWarehouseId ?: $toWarehouseId;
+        if (!$warehouseId) {
+            return;
+        }
+
+        $stock = $this->stockFor($product, $warehouseId);
+        if ($movementType === 'in') {
+            $stock->increment('quantity', $quantity);
+        } elseif ($movementType === 'out') {
+            $stock->decrement('quantity', $quantity);
+        }
+    }
+
+    protected function stockFor(Product $product, int $warehouseId): ProductStock
+    {
+        return ProductStock::firstOrCreate(
+            ['product_id' => $product->id, 'warehouse_id' => $warehouseId],
+            ['quantity' => 0]
+        );
     }
 
     public function getStockAlerts(): array

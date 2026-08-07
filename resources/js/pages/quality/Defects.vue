@@ -17,8 +17,8 @@
             <th class="text-left px-4 py-3 font-medium">Date</th>
             <th class="text-left px-4 py-3 font-medium">Batch</th>
             <th class="text-left px-4 py-3 font-medium">Type</th>
-            <th class="text-left px-4 py-3 font-medium">Quantity</th>
             <th class="text-left px-4 py-3 font-medium">Severity</th>
+            <th class="text-left px-4 py-3 font-medium">Status</th>
             <th class="text-right px-4 py-3 font-medium">Actions</th>
           </tr>
         </thead>
@@ -27,9 +27,11 @@
             <td class="px-4 py-3">{{ item.created_at?.substring(0, 10) }}</td>
             <td class="px-4 py-3">#{{ item.batch_id }}</td>
             <td class="px-4 py-3">{{ item.type || '-' }}</td>
-            <td class="px-4 py-3">{{ item.quantity }}</td>
             <td class="px-4 py-3">
               <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="severityClass(item.severity)">{{ item.severity }}</span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.status }}</span>
             </td>
             <td class="px-4 py-3 text-right">
               <button @click="openForm(item)" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">Edit</button>
@@ -54,17 +56,14 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-            <input v-model="form.type" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-            <input v-model.number="form.quantity" type="number" min="1" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
+            <input v-model="form.type" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Severity</label>
             <select v-model="form.severity" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm">
-              <option value="minor">Minor</option>
-              <option value="major">Major</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
               <option value="critical">Critical</option>
             </select>
           </div>
@@ -107,10 +106,15 @@ const saving = ref(false)
 const formError = ref('')
 const deleteItem = ref(null)
 const deleting = ref(false)
-const form = reactive({ batch_id: '', type: '', quantity: 1, severity: 'minor', description: '' })
+const form = reactive({ batch_id: '', type: '', severity: 'low', description: '' })
 
 function severityClass(s) {
-  const map = { minor: 'bg-yellow-100 text-yellow-800', major: 'bg-orange-100 text-orange-800', critical: 'bg-red-100 text-red-800' }
+  const map = { minor: 'bg-yellow-100 text-yellow-800', low: 'bg-yellow-100 text-yellow-800', major: 'bg-orange-100 text-orange-800', medium: 'bg-orange-100 text-orange-800', high: 'bg-red-100 text-red-800', critical: 'bg-red-100 text-red-800' }
+  return map[s] || 'bg-gray-100 text-gray-800'
+}
+
+function statusClass(s) {
+  const map = { open: 'bg-yellow-100 text-yellow-800', in_progress: 'bg-blue-100 text-blue-800', resolved: 'bg-green-100 text-green-800', closed: 'bg-gray-100 text-gray-800' }
   return map[s] || 'bg-gray-100 text-gray-800'
 }
 
@@ -132,8 +136,8 @@ async function loadBatches() {
 
 function openForm(item) {
   editingItem.value = item
-  form.batch_id = item?.batch_id || ''; form.type = item?.type || ''; form.quantity = item?.quantity || 1
-  form.severity = item?.severity || 'minor'; form.description = item?.description || ''
+  form.batch_id = item?.batch_id || ''; form.type = item?.type || ''
+  form.severity = item?.severity || 'low'; form.description = item?.description || ''
   formVisible.value = true; formError.value = ''
   if (!batches.value.length) loadBatches()
 }
