@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Machines</h2>
+    <div class="flex justify-end mb-4">
       <button @click="openForm(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">+ Add Machine</button>
     </div>
 
@@ -26,9 +25,9 @@
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-medium">{{ item.name }}</td>
             <td class="px-4 py-3">{{ item.type || '-' }}</td>
-            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.status }}</span></td>
-            <td class="px-4 py-3">{{ item.last_maintenance?.slice(0, 10) || '-' }}</td>
-            <td class="px-4 py-3">{{ item.next_maintenance?.slice(0, 10) || '-' }}</td>
+            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ humanize(item.status) }}</span></td>
+            <td class="px-4 py-3">{{ formatDate(item.last_maintenance) || '-' }}</td>
+            <td class="px-4 py-3">{{ formatDate(item.next_maintenance) || '-' }}</td>
             <td class="px-4 py-3 text-right">
               <button @click="openForm(item)" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">Edit</button>
               <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
@@ -143,7 +142,7 @@ async function handleSave() {
       Object.assign(editingItem.value, data.data || data)
     } else {
       const { data } = await axios.post('/machines', form)
-      items.value.push(data.data || data)
+      items.value.unshift(data.data || data)
     }
     formVisible.value = false
   } catch (e) { formError.value = e.response?.data?.message || 'Failed to save.' }

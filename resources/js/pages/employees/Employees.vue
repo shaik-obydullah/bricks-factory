@@ -1,7 +1,15 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Employees</h2>
+      <div class="flex items-center gap-2">
+        <input v-model="filters.search" @input="fetchData" placeholder="Search ID, name, designation, department, phone..." class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-96 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+        <select v-model="filters.status" @change="fetchData" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <button v-if="hasFilters" @click="clearFilters" class="text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white">Clear</button>
+      </div>
       <button @click="openForm(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ Add Employee</button>
     </div>
 
@@ -33,7 +41,7 @@
             <td class="px-4 py-3">{{ item.shift?.name || '-' }}</td>
             <td class="px-4 py-3">{{ item.phone || '-' }}</td>
             <td class="px-4 py-3">
-              <span :class="item.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-1 rounded-full text-xs font-medium">{{ item.status }}</span>
+              <span :class="item.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-1 rounded-full text-xs font-medium">{{ humanize(item.status) }}</span>
             </td>
             <td class="px-4 py-3 text-right">
               <button @click="openForm(item)" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">Edit</button>
@@ -119,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import axios from '@/utils/axios'
 
 const items = ref([])
@@ -133,15 +141,19 @@ const formError = ref('')
 const deleteItem = ref(null)
 const deleting = ref(false)
 const form = reactive({ employee_id: '', name: '', phone: '', email: '', designation: '', department: '', shift_id: null, joining_date: '', status: 'active' })
+const filters = reactive({ search: '', status: '' })
+const hasFilters = computed(() => filters.search || filters.status)
 
 async function fetchData() {
   loading.value = true
   try {
-    const { data } = await axios.get('/employees')
+    const { data } = await axios.get('/employees', { params: { search: filters.search || undefined, status: filters.status || undefined } })
     items.value = data.data || data
   } catch (e) { error.value = 'Failed to load employees.' }
   finally { loading.value = false }
 }
+
+function clearFilters() { filters.search = ''; filters.status = ''; fetchData() }
 
 async function fetchShifts() {
   try {
@@ -171,7 +183,7 @@ async function handleSave() {
       Object.assign(editingItem.value, data.data || data)
     } else {
       const { data } = await axios.post('/employees', form)
-      items.value.push(data.data || data)
+      items.value.unshift(data.data || data)
     }
     formVisible.value = false
   } catch (e) { formError.value = e.response?.data?.message || Object.values(e.response?.data?.errors || {}).flat().join(', ') || 'Failed to save.' }

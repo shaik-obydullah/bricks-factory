@@ -1,7 +1,5 @@
 <template>
   <div>
-    <h2 class="text-lg font-semibold text-gray-800 mb-4">Stock Alerts</h2>
-
     <div v-if="loading" class="flex justify-center py-20">
       <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
@@ -21,9 +19,9 @@
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-medium">{{ item.name }}</td>
-            <td class="px-4 py-3">{{ item.type }}</td>
+            <td class="px-4 py-3">{{ item.type === 'product' ? 'Product' : 'Raw Material' }}</td>
             <td class="px-4 py-3 font-semibold text-red-600">{{ item.current_stock }}</td>
-            <td class="px-4 py-3">{{ item.min_stock }}</td>
+            <td class="px-4 py-3">{{ item.minimum_stock ?? '-' }}</td>
             <td class="px-4 py-3">
               <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Low Stock</span>
             </td>
@@ -45,7 +43,7 @@ const error = ref('')
 onMounted(async () => {
   try {
     const { data } = await axios.get('/stock-alerts')
-    items.value = data.data || data
+    items.value = data.items || data.low_stock_materials || []
   } catch (e) { error.value = 'Failed to load alerts.' }
   finally { loading.value = false }
 })

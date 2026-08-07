@@ -10,8 +10,8 @@
         </select>
         <select v-model="filters.movable_type" class="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white" @change="fetchData">
           <option value="">All Types</option>
-          <option value="App\\Models\\Product">Products</option>
-          <option value="App\\Models\\RawMaterial">Raw Materials</option>
+          <option value="App\Models\Product">Products</option>
+          <option value="App\Models\RawMaterial">Raw Materials</option>
         </select>
       </div>
       <button @click="openForm()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ New Movement</button>
@@ -35,9 +35,9 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3">{{ item.created_at?.substring(0, 10) }}</td>
+            <td class="px-4 py-3">{{ formatDate(item.created_at) }}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="item.movement_type === 'in' ? 'bg-green-100 text-green-800' : item.movement_type === 'out' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">{{ item.movement_type }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="item.movement_type === 'in' ? 'bg-green-100 text-green-800' : item.movement_type === 'out' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">{{ humanize(item.movement_type) }}</span>
             </td>
             <td class="px-4 py-3">{{ item.typeable?.name || '-' }}</td>
             <td class="px-4 py-3">{{ item.quantity }}</td>
@@ -64,8 +64,8 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Item Type</label>
             <select v-model="form.movable_type" @change="loadItems" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm">
-              <option value="App\\Models\\Product">Product</option>
-              <option value="App\\Models\\RawMaterial">Raw Material</option>
+              <option value="App\Models\Product">Product</option>
+              <option value="App\Models\RawMaterial">Raw Material</option>
             </select>
           </div>
           <div>

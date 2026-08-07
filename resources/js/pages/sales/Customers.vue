@@ -1,7 +1,14 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Customers</h2>
+      <div class="flex items-center gap-2">
+        <input v-model="filters.search" @input="fetchData" placeholder="Search name, email, phone, company..." class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-72 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+        <select v-model="filters.company" @change="fetchData" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">All Companies</option>
+          <option v-for="c in companies" :key="c" :value="c">{{ c }}</option>
+        </select>
+        <button v-if="hasFilters" @click="clearFilters" class="text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white">Clear</button>
+      </div>
       <button @click="openForm(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ Add Customer</button>
     </div>
 
@@ -68,19 +75,37 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import axios from '@/utils/axios'
 
 const items = ref([]); const loading = ref(true); const error = ref('')
 const formVisible = ref(false); const editingItem = ref(null); const saving = ref(false); const formError = ref('')
 const deleteItem = ref(null); const deleting = ref(false)
 const form = reactive({ name: '', email: '', phone: '', company: '', address: '' })
+const filters = reactive({ search: '', company: '' })
+const companies = ref([])
+
+const hasFilters = computed(() => filters.search !== '' || filters.company !== '')
 
 async function fetchData() {
   loading.value = true
-  try { const { data } = await axios.get('/customers'); items.value = data.data || data }
+  try {
+    const params = {}
+    if (filters.search) params.search = filters.search
+    if (filters.company) params.company = filters.company
+    const { data } = await axios.get('/customers', { params })
+    items.value = data.data || data
+  }
   catch (e) { error.value = 'Failed to load customers.' }
   finally { loading.value = false }
+}
+async function loadCompanies() {
+  try { const { data } = await axios.get('/customers'); const all = data.data || data; companies.value = [...new Set(all.map(c => c.company).filter(Boolean))] }
+  catch (e) {}
+}
+function clearFilters() {
+  filters.search = ''; filters.company = ''
+  fetchData()
 }
 function openForm(item) {
   editingItem.value = item
@@ -91,7 +116,7 @@ async function handleSave() {
   saving.value = true; formError.value = ''
   try {
     if (editingItem.value) { const { data } = await axios.put(`/customers/${editingItem.value.id}`, form); Object.assign(editingItem.value, data.data || data) }
-    else { const { data } = await axios.post('/customers', form); items.value.push(data.data || data) }
+    else { const { data } = await axios.post('/customers', form); items.value.unshift(data.data || data) }
     formVisible.value = false
   } catch (e) { formError.value = e.response?.data?.message || 'Failed to save.' }
   finally { saving.value = false }
@@ -103,5 +128,5 @@ async function handleDelete() {
   catch (e) { error.value = 'Failed to delete.' }
   finally { deleting.value = false }
 }
-onMounted(fetchData)
+onMounted(() => { fetchData(); loadCompanies() })
 </script>

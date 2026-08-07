@@ -17,9 +17,11 @@ instance.interceptors.request.use((config) => {
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 401 && !error.config?.url?.includes('/login')) {
       localStorage.removeItem('token')
-      window.location.href = '/login'
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

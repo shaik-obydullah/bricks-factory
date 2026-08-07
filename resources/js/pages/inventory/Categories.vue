@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Categories</h2>
+    <div class="flex justify-end mb-4">
       <button @click="openForm(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ Add Category</button>
     </div>
 
@@ -44,10 +43,6 @@
             <input v-model="form.name" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-            <input v-model="form.slug" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
-          </div>
-          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea v-model="form.description" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm"></textarea>
           </div>
@@ -85,7 +80,7 @@ const saving = ref(false)
 const formError = ref('')
 const deleteItem = ref(null)
 const deleting = ref(false)
-const form = reactive({ name: '', slug: '', description: '' })
+const form = reactive({ name: '', description: '' })
 
 async function fetchData() {
   loading.value = true
@@ -98,7 +93,7 @@ async function fetchData() {
 
 function openForm(item) {
   editingItem.value = item
-  form.name = item?.name || ''; form.slug = item?.slug || ''; form.description = item?.description || ''
+  form.name = item?.name || ''; form.description = item?.description || ''
   formVisible.value = true; formError.value = ''
 }
 
@@ -110,7 +105,7 @@ async function handleSave() {
       Object.assign(editingItem.value, data.data || data)
     } else {
       const { data } = await axios.post('/categories', form)
-      items.value.push(data.data || data)
+      items.value.unshift(data.data || data)
     }
     formVisible.value = false
   } catch (e) { formError.value = e.response?.data?.message || 'Failed to save.' }

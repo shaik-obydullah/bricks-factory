@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+@media print {
+  body * { visibility: hidden; }
+  .invoice-print, .invoice-print * { visibility: visible; }
+  .invoice-print { position: absolute; top: 0; left: 0; width: 100%; background: white; }
+}

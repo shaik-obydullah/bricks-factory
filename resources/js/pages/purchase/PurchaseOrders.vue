@@ -5,10 +5,9 @@
         <select v-model="filters.status" class="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white" @change="fetchData">
           <option value="">All Statuses</option>
           <option value="draft">Draft</option>
-          <option value="sent">Sent</option>
-          <option value="approved">Approved</option>
+          <option value="confirmed">Confirmed</option>
           <option value="received">Received</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="completed">Completed</option>
         </select>
       </div>
       <button @click="openForm()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ New Order</button>
@@ -26,9 +25,9 @@
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-mono text-xs">#{{ item.id }}</td>
             <td class="px-4 py-3">{{ item.supplier?.name || '-' }}</td>
-            <td class="px-4 py-3">{{ item.order_date || item.created_at?.substring(0, 10) }}</td>
-            <td class="px-4 py-3">${{ Number(item.total || 0).toFixed(2) }}</td>
-            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.status }}</span></td>
+            <td class="px-4 py-3">{{ formatDate(item.order_date || item.created_at) }}</td>
+            <td class="px-4 py-3">${{ Number(item.total_amount ?? item.total ?? 0).toFixed(2) }}</td>
+            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ humanize(item.status) }}</span></td>
             <td class="px-4 py-3 text-right">
               <button @click="openForm(item)" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">Edit</button>
               <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
@@ -60,24 +59,39 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select v-model="form.status" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm">
               <option value="draft">Draft</option>
-              <option value="sent">Sent</option>
-              <option value="approved">Approved</option>
+              <option value="confirmed">Confirmed</option>
               <option value="received">Received</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="completed">Completed</option>
             </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Items</label>
-            <div v-for="(item, idx) in form.items" :key="idx" class="flex gap-2 mb-2">
-              <select v-model="item.raw_material_id" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <div class="grid grid-cols-12 gap-2 items-center text-xs font-medium text-gray-600 mb-1 px-1">
+              <div class="col-span-5">Material</div>
+              <div class="col-span-2">Qty</div>
+              <div class="col-span-2">Unit Price</div>
+              <div class="col-span-2">Subtotal</div>
+              <div class="col-span-1"></div>
+            </div>
+            <div v-for="(item, idx) in form.items" :key="idx" class="grid grid-cols-12 gap-2 mb-2 items-center">
+              <select v-model="item.raw_material_id" class="col-span-5 border border-gray-300 rounded-lg px-3 py-2 text-sm">
                 <option value="">Select Material</option>
                 <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.name }}</option>
               </select>
-              <input v-model.number="item.quantity" type="number" min="1" placeholder="Qty" class="w-20 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-              <input v-model.number="item.unit_price" type="number" step="0.01" min="0" placeholder="Price" class="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-              <button type="button" @click="removeItem(idx)" class="text-red-500 hover:text-red-700 px-2">&times;</button>
+              <input v-model.number="item.quantity" type="number" min="1" placeholder="Qty" class="col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              <input v-model.number="item.unit_price" type="number" step="0.01" min="0" placeholder="Price" class="col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              <span class="col-span-2 text-sm font-medium text-gray-800">${{ itemSubtotal(item) }}</span>
+              <div class="col-span-1 text-right">
+                <button type="button" @click="removeItem(idx)" class="text-red-500 hover:text-red-700 px-2">&times;</button>
+              </div>
             </div>
             <button type="button" @click="addItem" class="text-sm text-indigo-600 hover:text-indigo-800">+ Add Item</button>
+          </div>
+          <div class="flex justify-end">
+            <div class="text-right text-sm">
+              <div class="text-gray-600">Total</div>
+              <div class="text-xl font-bold text-gray-800">${{ orderSubtotal }}</div>
+            </div>
           </div>
           <div class="flex justify-end gap-3 pt-2">
             <button type="button" @click="formVisible = false" class="px-4 py-2.5 text-sm text-gray-700 bg-gray-100 rounded-lg">Cancel</button>
@@ -101,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import axios from '@/utils/axios'
 
 const items = ref([]); const suppliers = ref([]); const materials = ref([])
@@ -111,8 +125,15 @@ const deleteItem = ref(null); const deleting = ref(false)
 const filters = reactive({ status: '' })
 const form = reactive({ supplier_id: '', order_date: '', status: 'draft', items: [] })
 
+function itemSubtotal(item) {
+  return (Number(item.quantity || 0) * Number(item.unit_price || 0)).toFixed(2)
+}
+const orderSubtotal = computed(() =>
+  form.items.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.unit_price || 0), 0).toFixed(2)
+)
+
 function statusClass(s) {
-  const map = { draft: 'bg-gray-100 text-gray-800', sent: 'bg-blue-100 text-blue-800', approved: 'bg-green-100 text-green-800', received: 'bg-purple-100 text-purple-800', cancelled: 'bg-red-100 text-red-800' }
+  const map = { draft: 'bg-gray-100 text-gray-800', confirmed: 'bg-blue-100 text-blue-800', received: 'bg-purple-100 text-purple-800', completed: 'bg-green-100 text-green-800' }
   return map[s] || 'bg-gray-100 text-gray-800'
 }
 
@@ -125,10 +146,10 @@ async function fetchData() {
 
 async function openForm(item) {
   editingItem.value = item
-  try { const [sRes, mRes] = await Promise.all([axios.get('/suppliers'), axios.get('/raw-materials')]); suppliers.value = sRes.data.data || sRes.data; materials.value = mRes.data.data || mRes.data } catch (e) {}
+  try { const [sRes, mRes] = await Promise.all([axios.get('/suppliers', { params: { per_page: 500 } }), axios.get('/raw-materials', { params: { per_page: 500 } })]); suppliers.value = sRes.data.data || sRes.data; materials.value = mRes.data.data || mRes.data } catch (e) {}
   if (item) {
-    form.supplier_id = item.supplier_id; form.order_date = item.order_date || ''; form.status = item.status
-    form.items = (item.items || []).map(i => ({ raw_material_id: i.raw_material_id, quantity: i.quantity, unit_price: i.unit_price }))
+    form.supplier_id = item.supplier_id; form.order_date = (item.order_date || '').substring(0, 10); form.status = item.status
+    form.items = (item.items || []).map(i => ({ raw_material_id: i.material_id, quantity: i.quantity, unit_price: i.unit_price }))
   } else {
     form.supplier_id = ''; form.order_date = new Date().toISOString().substring(0, 10); form.status = 'draft'; form.items = []
   }
@@ -142,7 +163,7 @@ async function handleSave() {
   saving.value = true; formError.value = ''
   try {
     if (editingItem.value) { const { data } = await axios.put(`/purchase-orders/${editingItem.value.id}`, form); Object.assign(editingItem.value, data.data || data) }
-    else { const { data } = await axios.post('/purchase-orders', form); items.value.push(data.data || data) }
+    else { const { data } = await axios.post('/purchase-orders', form); items.value.unshift(data.data || data) }
     formVisible.value = false
   } catch (e) { formError.value = e.response?.data?.message || 'Failed to save.' }
   finally { saving.value = false }

@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Production Targets</h2>
+    <div class="flex justify-end mb-4">
       <button @click="openForm(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">+ Add Target</button>
     </div>
 
@@ -26,7 +25,7 @@
             <td class="px-4 py-3">{{ item.product?.name || '-' }}</td>
             <td class="px-4 py-3">{{ item.target_quantity }}</td>
             <td class="px-4 py-3">{{ item.actual_quantity ?? 0 }}</td>
-            <td class="px-4 py-3">{{ item.target_date?.substring(0, 10) || '-' }}</td>
+            <td class="px-4 py-3">{{ formatDate(item.target_date) || '-' }}</td>
             <td class="px-4 py-3 text-right">
               <button @click="openForm(item)" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">Edit</button>
               <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
@@ -124,7 +123,7 @@ async function handleSave() {
       Object.assign(editingItem.value, data.data || data)
     } else {
       const { data } = await axios.post('/production-targets', form)
-      items.value.push(data.data || data)
+      items.value.unshift(data.data || data)
     }
     formVisible.value = false
   } catch (e) { formError.value = e.response?.data?.message || 'Failed to save.' }

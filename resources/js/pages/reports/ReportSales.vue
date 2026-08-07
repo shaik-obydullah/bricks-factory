@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Sales Report</h2>
+    <div class="flex justify-end mb-4">
       <div class="flex items-center gap-2">
         <input v-model="filters.from" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
         <input v-model="filters.to" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
@@ -41,9 +40,9 @@
             <tr v-for="order in report.orders" :key="order.id" class="hover:bg-gray-50">
               <td class="px-4 py-3 font-mono text-xs">{{ order.order_number }}</td>
               <td class="px-4 py-3 font-medium">{{ order.customer?.name || '-' }}</td>
-              <td class="px-4 py-3">{{ order.order_date }}</td>
+              <td class="px-4 py-3">{{ formatDate(order.order_date) }}</td>
               <td class="px-4 py-3">
-                <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">{{ order.status }}</span>
+                <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">{{ humanize(order.status) }}</span>
               </td>
               <td class="px-4 py-3 text-right font-medium">৳{{ Number(order.final_amount).toLocaleString() }}</td>
             </tr>

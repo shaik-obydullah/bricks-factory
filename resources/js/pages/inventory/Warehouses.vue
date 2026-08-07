@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Warehouses</h2>
+    <div class="flex justify-end mb-4">
       <button @click="openForm(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ Add Warehouse</button>
     </div>
 
@@ -15,7 +14,6 @@
         <thead class="bg-gray-50 text-gray-600">
           <tr>
             <th class="text-left px-4 py-3 font-medium">Name</th>
-            <th class="text-left px-4 py-3 font-medium">Code</th>
             <th class="text-left px-4 py-3 font-medium">Location</th>
             <th class="text-left px-4 py-3 font-medium">Capacity</th>
             <th class="text-right px-4 py-3 font-medium">Actions</th>
@@ -24,7 +22,6 @@
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-medium">{{ item.name }}</td>
-            <td class="px-4 py-3 font-mono text-xs">{{ item.code || '-' }}</td>
             <td class="px-4 py-3">{{ item.location || '-' }}</td>
             <td class="px-4 py-3">{{ item.capacity || '-' }}</td>
             <td class="px-4 py-3 text-right">
@@ -45,10 +42,6 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
             <input v-model="form.name" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Code</label>
-            <input v-model="form.code" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
@@ -92,7 +85,7 @@ const saving = ref(false)
 const formError = ref('')
 const deleteItem = ref(null)
 const deleting = ref(false)
-const form = reactive({ name: '', code: '', location: '', capacity: '' })
+const form = reactive({ name: '', location: '', capacity: '' })
 
 async function fetchData() {
   loading.value = true
@@ -106,9 +99,9 @@ async function fetchData() {
 function openForm(item) {
   editingItem.value = item
   if (item) {
-    form.name = item.name; form.code = item.code || ''; form.location = item.location || ''; form.capacity = item.capacity || ''
+    form.name = item.name; form.location = item.location || ''; form.capacity = item.capacity || ''
   } else {
-    form.name = ''; form.code = ''; form.location = ''; form.capacity = ''
+    form.name = ''; form.location = ''; form.capacity = ''
   }
   formVisible.value = true; formError.value = ''
 }
@@ -121,7 +114,7 @@ async function handleSave() {
       Object.assign(editingItem.value, data.data || data)
     } else {
       const { data } = await axios.post('/warehouses', form)
-      items.value.push(data.data || data)
+      items.value.unshift(data.data || data)
     }
     formVisible.value = false
   } catch (e) { formError.value = e.response?.data?.message || 'Failed to save.' }

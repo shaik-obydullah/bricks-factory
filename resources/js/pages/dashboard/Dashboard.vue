@@ -111,7 +111,7 @@
               <div class="w-2 h-2 mt-2 rounded-full" :class="activityColor(item.type)"></div>
               <div>
                 <p class="text-sm text-gray-700">{{ item.description }}</p>
-                <p class="text-xs text-gray-400">{{ item.created_at }}</p>
+                <p class="text-xs text-gray-400">{{ formatDate(item.created_at) }}</p>
               </div>
             </div>
           </div>

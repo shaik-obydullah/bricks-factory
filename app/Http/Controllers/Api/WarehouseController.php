@@ -20,6 +20,7 @@ class WarehouseController extends Controller
         $warehouse = Warehouse::create($request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
+            'capacity' => 'nullable|numeric|min:0',
             'status' => 'nullable|string|in:active,inactive',
         ]));
         return response()->json($warehouse, 201);
@@ -36,6 +37,7 @@ class WarehouseController extends Controller
         $warehouse->update($request->validate([
             'name' => 'sometimes|string|max:255',
             'location' => 'nullable|string|max:255',
+            'capacity' => 'nullable|numeric|min:0',
             'status' => 'nullable|string|in:active,inactive',
         ]));
         return response()->json($warehouse);

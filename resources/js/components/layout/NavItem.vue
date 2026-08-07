@@ -27,5 +27,5 @@ const props = defineProps({
 })
 
 const route = useRoute()
-const isActive = computed(() => route.path.startsWith(props.to))
+const isActive = computed(() => route.path === props.to)
 </script>

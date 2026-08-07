@@ -10,9 +10,24 @@ use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
 {
-    public function employees(): JsonResponse
+    public function employees(Request $request): JsonResponse
     {
-        $employees = Employee::with('shift')->latest()->paginate(20);
+        $employees = Employee::with('shift')
+            ->when($request->input('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('employee_id', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhere('designation', 'like', "%{$search}%")
+                        ->orWhere('department', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->input('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
+            ->latest()
+            ->paginate(20);
         return response()->json($employees);
     }
 
@@ -59,9 +74,27 @@ class EmployeeController extends Controller
         return response()->json(['message' => 'Employee deleted']);
     }
 
-    public function attendance(): JsonResponse
+    public function attendance(Request $request): JsonResponse
     {
-        $attendance = Attendance::with('employee')->latest()->paginate(20);
+        $attendance = Attendance::with('employee')
+            ->when($request->input('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->whereHas('employee', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('employee_id', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->input('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
+            ->when($request->input('date_from'), function ($query) use ($request) {
+                $query->whereDate('date', '>=', $request->input('date_from'));
+            })
+            ->when($request->input('date_to'), function ($query) use ($request) {
+                $query->whereDate('date', '<=', $request->input('date_to'));
+            })
+            ->latest()
+            ->paginate(20);
         return response()->json($attendance);
     }
 

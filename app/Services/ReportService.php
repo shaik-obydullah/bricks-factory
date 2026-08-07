@@ -76,6 +76,11 @@ class ReportService
         return $monthly;
     }
 
+    protected function humanizeStatus(string $status): string
+    {
+        return ucwords(str_replace('_', ' ', $status));
+    }
+
     protected function recentActivity(): array
     {
         $activity = [];
@@ -86,7 +91,7 @@ class ReportService
                 'type' => 'production',
                 'description' => 'Production order ' . $order->order_number
                     . ($order->product ? ' for ' . $order->product->name : '')
-                    . ' (' . $order->status . ')',
+                    . ' (' . $this->humanizeStatus($order->status) . ')',
                 'created_at' => $order->created_at?->toDateTimeString(),
             ];
         }
@@ -97,7 +102,7 @@ class ReportService
                 'type' => 'sales',
                 'description' => 'Sales order ' . $order->order_number
                     . ($order->customer ? ' from ' . $order->customer->name : '')
-                    . ' (' . $order->status . ')',
+                    . ' (' . $this->humanizeStatus($order->status) . ')',
                 'created_at' => $order->created_at?->toDateTimeString(),
             ];
         }
@@ -106,7 +111,7 @@ class ReportService
             $activity[] = [
                 'id' => 'qc-' . $check->id,
                 'type' => 'quality',
-                'description' => 'Quality check #' . $check->id . ' (' . $check->status . ')',
+                'description' => 'Quality check #' . $check->id . ' (' . $this->humanizeStatus($check->status) . ')',
                 'created_at' => $check->created_at?->toDateTimeString(),
             ];
         }
@@ -115,7 +120,7 @@ class ReportService
             $activity[] = [
                 'id' => 'sm-' . $movement->id,
                 'type' => 'inventory',
-                'description' => 'Stock movement (' . $movement->movement_type . ') ref ' . $movement->reference,
+                'description' => 'Stock movement (' . $this->humanizeStatus($movement->movement_type) . ') ref ' . $movement->reference,
                 'created_at' => $movement->created_at?->toDateTimeString(),
             ];
         }

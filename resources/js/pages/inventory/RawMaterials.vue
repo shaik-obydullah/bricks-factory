@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Raw Materials</h2>
+    <div class="flex justify-end mb-4">
       <button @click="openForm(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ Add Material</button>
     </div>
 
@@ -15,7 +14,7 @@
         <thead class="bg-gray-50 text-gray-600">
           <tr>
             <th class="text-left px-4 py-3 font-medium">Name</th>
-            <th class="text-left px-4 py-3 font-medium">Code</th>
+            <th class="text-left px-4 py-3 font-medium">SKU</th>
             <th class="text-left px-4 py-3 font-medium">Unit</th>
             <th class="text-left px-4 py-3 font-medium">Current Stock</th>
             <th class="text-left px-4 py-3 font-medium">Min Stock</th>
@@ -28,7 +27,7 @@
             <td class="px-4 py-3 font-mono text-xs">{{ item.code || '-' }}</td>
             <td class="px-4 py-3">{{ item.unit || '-' }}</td>
             <td class="px-4 py-3">{{ item.current_stock ?? '-' }}</td>
-            <td class="px-4 py-3">{{ item.min_stock || '-' }}</td>
+            <td class="px-4 py-3">{{ item.minimum_stock || '-' }}</td>
             <td class="px-4 py-3 text-right">
               <button @click="openForm(item)" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">Edit</button>
               <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
@@ -49,7 +48,7 @@
             <input v-model="form.name" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Code</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
             <input v-model="form.code" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" />
           </div>
           <div>
@@ -118,7 +117,7 @@ async function fetchData() {
 function openForm(item) {
   editingItem.value = item
   if (item) {
-    form.name = item.name; form.code = item.code || ''; form.unit = item.unit; form.current_stock = item.current_stock; form.min_stock = item.min_stock
+    form.name = item.name; form.code = item.code || ''; form.unit = item.unit; form.current_stock = item.current_stock; form.min_stock = item.minimum_stock
   } else {
     form.name = ''; form.code = ''; form.unit = 'kg'; form.current_stock = 0; form.min_stock = 0
   }
@@ -133,7 +132,7 @@ async function handleSave() {
       Object.assign(editingItem.value, data.data || data)
     } else {
       const { data } = await axios.post('/raw-materials', form)
-      items.value.push(data.data || data)
+      items.value.unshift(data.data || data)
     }
     formVisible.value = false
   } catch (e) { formError.value = e.response?.data?.message || 'Failed to save.' }

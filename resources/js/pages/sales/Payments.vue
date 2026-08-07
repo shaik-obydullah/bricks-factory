@@ -1,8 +1,20 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Payments</h2>
+    <div class="flex justify-end mb-4">
       <button @click="openForm()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ Record Payment</button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">From</label>
+        <input v-model="filters.date_from" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">To</label>
+        <input v-model="filters.date_to" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+      </div>
+      <button @click="applyFilters" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Filter</button>
+      <button v-if="filters.date_from || filters.date_to" @click="clearFilters" class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Clear</button>
     </div>
 
     <div v-if="loading" class="flex justify-center py-20">
@@ -24,10 +36,10 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3">{{ item.payment_date || item.created_at?.substring(0, 10) }}</td>
+            <td class="px-4 py-3">{{ formatDate(item.payment_date || item.created_at) }}</td>
             <td class="px-4 py-3">#{{ item.invoice_id }}</td>
             <td class="px-4 py-3">${{ Number(item.amount || 0).toFixed(2) }}</td>
-            <td class="px-4 py-3">{{ item.payment_method || '-' }}</td>
+            <td class="px-4 py-3">{{ item.method ? item.method.charAt(0).toUpperCase() + item.method.slice(1) : '-' }}</td>
             <td class="px-4 py-3 text-xs">{{ item.reference || '-' }}</td>
             <td class="px-4 py-3 text-right">
               <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
@@ -61,9 +73,9 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
             <select v-model="form.payment_method" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm">
               <option value="cash">Cash</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="check">Check</option>
-              <option value="credit_card">Credit Card</option>
+              <option value="bank">Bank Transfer</option>
+              <option value="nagad">Nagad</option>
+              <option value="bkash">Bkash</option>
             </select>
           </div>
           <div>
@@ -100,13 +112,20 @@ const loading = ref(true); const error = ref('')
 const formVisible = ref(false); const saving = ref(false); const formError = ref('')
 const deleteItem = ref(null); const deleting = ref(false)
 const form = reactive({ invoice_id: '', amount: 0, payment_date: '', payment_method: 'cash', reference: '' })
+const filters = reactive({ date_from: '', date_to: '' })
 
 async function fetchData() {
   loading.value = true
-  try { const { data } = await axios.get('/payments'); items.value = data.data || data }
+  try {
+    const { data } = await axios.get('/payments', { params: { date_from: filters.date_from || undefined, date_to: filters.date_to || undefined } })
+    items.value = data.data || data
+  }
   catch (e) { error.value = 'Failed to load payments.' }
   finally { loading.value = false }
 }
+
+function applyFilters() { fetchData() }
+function clearFilters() { filters.date_from = ''; filters.date_to = ''; fetchData() }
 
 async function openForm() {
   formVisible.value = true; formError.value = ''

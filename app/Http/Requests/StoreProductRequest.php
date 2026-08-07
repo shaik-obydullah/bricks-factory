@@ -31,4 +31,11 @@ class StoreProductRequest extends FormRequest
             'status' => 'nullable|string|in:active,inactive',
         ];
     }
+
+    public function attributes(): array
+    {
+        return [
+            'code' => 'SKU',
+        ];
+    }
 }

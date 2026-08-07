@@ -15,9 +15,19 @@ class PurchaseController extends Controller
 {
     public function __construct(protected PurchaseService $purchaseService) {}
 
-    public function suppliers(): JsonResponse
+    public function suppliers(Request $request): JsonResponse
     {
-        $suppliers = Supplier::latest()->paginate(20);
+        $suppliers = Supplier::when($request->input('search'), function ($query) use ($request) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('company', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        })
+            ->latest()
+            ->paginate($request->integer('per_page', 20));
         return response()->json($suppliers);
     }
 
@@ -45,9 +55,14 @@ class PurchaseController extends Controller
         return response()->json(['message' => 'Supplier deleted']);
     }
 
-    public function orders(): JsonResponse
+    public function orders(Request $request): JsonResponse
     {
-        $orders = PurchaseOrder::with('supplier', 'items.material', 'creator')->latest()->paginate(20);
+        $orders = PurchaseOrder::with('supplier', 'items.material', 'creator')
+            ->when($request->input('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
+            ->latest()
+            ->paginate(20);
         return response()->json($orders);
     }
 
@@ -111,9 +126,27 @@ class PurchaseController extends Controller
         return response()->json(['message' => 'Purchase order deleted']);
     }
 
-    public function goodsReceipts(): JsonResponse
+    public function goodsReceipts(Request $request): JsonResponse
     {
-        $receipts = \App\Models\GoodsReceipt::with('order.supplier', 'receiver')->latest()->paginate(20);
+        $receipts = \App\Models\GoodsReceipt::with('order.supplier', 'receiver')
+            ->when($request->input('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('order_id', 'like', "%{$search}%")
+                        ->orWhereHas('order.supplier', fn ($sq) => $sq->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->when($request->input('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
+            ->when($request->input('date_from'), function ($query) use ($request) {
+                $query->whereDate('receipt_date', '>=', $request->input('date_from'));
+            })
+            ->when($request->input('date_to'), function ($query) use ($request) {
+                $query->whereDate('receipt_date', '<=', $request->input('date_to'));
+            })
+            ->latest()
+            ->paginate(20);
         return response()->json($receipts);
     }
 

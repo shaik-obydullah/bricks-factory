@@ -38,12 +38,12 @@
             <td class="px-4 py-3 font-mono text-xs">#{{ item.id }}</td>
             <td class="px-4 py-3">{{ item.product?.name || '-' }}</td>
             <td class="px-4 py-3">{{ item.quantity }}</td>
-            <td class="px-4 py-3">{{ item.planned_date }}</td>
+            <td class="px-4 py-3">{{ formatDate(item.planned_date) }}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="priorityClass(item.priority)">{{ item.priority }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="priorityClass(item.priority)">{{ humanize(item.priority) }}</span>
             </td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.status }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ humanize(item.status) }}</span>
             </td>
             <td class="px-4 py-3 text-right">
               <router-link :to="`/production/orders/${item.id}`" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium mr-3">View</router-link>

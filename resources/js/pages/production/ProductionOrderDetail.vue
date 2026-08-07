@@ -8,13 +8,13 @@
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-semibold text-gray-800">Order #{{ item.id }}</h2>
-          <span class="px-3 py-1 rounded-full text-sm font-medium" :class="statusClass(item.status)">{{ item.status }}</span>
+          <span class="px-3 py-1 rounded-full text-sm font-medium" :class="statusClass(item.status)">{{ humanize(item.status) }}</span>
         </div>
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div><dt class="text-gray-500">Product</dt><dd class="font-medium text-gray-800">{{ item.product?.name || '-' }}</dd></div>
           <div><dt class="text-gray-500">Quantity</dt><dd class="font-medium text-gray-800">{{ item.quantity }}</dd></div>
-          <div><dt class="text-gray-500">Planned Date</dt><dd class="font-medium text-gray-800">{{ item.planned_date }}</dd></div>
-          <div><dt class="text-gray-500">Priority</dt><dd class="font-medium text-gray-800">{{ item.priority }}</dd></div>
+          <div><dt class="text-gray-500">Planned Date</dt><dd class="font-medium text-gray-800">{{ formatDate(item.planned_date) }}</dd></div>
+          <div><dt class="text-gray-500">Priority</dt><dd class="font-medium text-gray-800">{{ humanize(item.priority) }}</dd></div>
           <div class="sm:col-span-2"><dt class="text-gray-500">Notes</dt><dd class="font-medium text-gray-800">{{ item.notes || 'None' }}</dd></div>
         </dl>
       </div>
@@ -39,7 +39,7 @@
               <td class="px-4 py-3">{{ b.machine?.name || '-' }}</td>
               <td class="px-4 py-3">{{ b.shift?.name || '-' }}</td>
               <td class="px-4 py-3">{{ b.quantity_produced }}</td>
-              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(b.status)">{{ b.status }}</span></td>
+              <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(b.status)">{{ humanize(b.status) }}</span></td>
             </tr>
           </tbody>
         </table>

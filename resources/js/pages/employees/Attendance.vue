@@ -1,7 +1,21 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Attendance</h2>
+      <div class="flex items-center gap-2">
+        <input v-model="filters.search" @input="fetchData" placeholder="Search employee name or ID..." class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+        <select v-model="filters.status" @change="fetchData" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">All Statuses</option>
+          <option value="present">Present</option>
+          <option value="absent">Absent</option>
+          <option value="late">Late</option>
+          <option value="half_day">Half Day</option>
+        </select>
+        <input v-model="filters.date_from" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+        <span class="text-gray-400 text-sm">to</span>
+        <input v-model="filters.date_to" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+        <button @click="fetchData" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Filter</button>
+        <button v-if="hasFilters" @click="clearFilters" class="text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white">Clear</button>
+      </div>
       <button @click="openForm()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ Mark Attendance</button>
     </div>
 
@@ -25,11 +39,11 @@
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-medium">{{ item.employee?.name || '-' }}</td>
-            <td class="px-4 py-3">{{ item.date }}</td>
+            <td class="px-4 py-3">{{ formatDate(item.date) }}</td>
             <td class="px-4 py-3">{{ item.check_in || '-' }}</td>
             <td class="px-4 py-3">{{ item.check_out || '-' }}</td>
             <td class="px-4 py-3">
-              <span :class="statusClass(item.status)" class="px-2 py-1 rounded-full text-xs font-medium">{{ item.status }}</span>
+              <span :class="statusClass(item.status)" class="px-2 py-1 rounded-full text-xs font-medium">{{ humanize(item.status) }}</span>
             </td>
             <td class="px-4 py-3 text-gray-500">{{ item.notes || '-' }}</td>
           </tr>
@@ -87,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import axios from '@/utils/axios'
 
 const items = ref([])
@@ -98,6 +112,8 @@ const formVisible = ref(false)
 const saving = ref(false)
 const formError = ref('')
 const form = reactive({ employee_id: null, date: '', check_in: '', check_out: '', status: 'present', notes: '' })
+const filters = reactive({ search: '', status: '', date_from: '', date_to: '' })
+const hasFilters = computed(() => filters.search || filters.status || filters.date_from || filters.date_to)
 
 function statusClass(status) {
   return {
@@ -111,11 +127,20 @@ function statusClass(status) {
 async function fetchData() {
   loading.value = true
   try {
-    const { data } = await axios.get('/attendance')
+    const { data } = await axios.get('/attendance', {
+      params: {
+        search: filters.search || undefined,
+        status: filters.status || undefined,
+        date_from: filters.date_from || undefined,
+        date_to: filters.date_to || undefined,
+      },
+    })
     items.value = data.data || data
   } catch (e) { error.value = 'Failed to load attendance.' }
   finally { loading.value = false }
 }
+
+function clearFilters() { filters.search = ''; filters.status = ''; filters.date_from = ''; filters.date_to = ''; fetchData() }
 
 async function fetchEmployees() {
   try {

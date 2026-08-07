@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Production Report</h2>
+    <div class="flex justify-end mb-4">
       <div class="flex items-center gap-2">
         <input v-model="filters.from" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
         <input v-model="filters.to" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
@@ -53,9 +52,9 @@
               <td class="px-4 py-3 text-right">{{ batch.quantity_produced }}</td>
               <td class="px-4 py-3 text-right text-red-600">{{ batch.quantity_rejected }}</td>
               <td class="px-4 py-3">
-                <span :class="batch.status === 'completed' ? 'bg-green-100 text-green-700' : batch.status === 'running' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-1 rounded-full text-xs font-medium">{{ batch.status }}</span>
+                <span :class="batch.status === 'completed' ? 'bg-green-100 text-green-700' : batch.status === 'running' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-1 rounded-full text-xs font-medium">{{ humanize(batch.status) }}</span>
               </td>
-              <td class="px-4 py-3 text-gray-500">{{ batch.created_at?.slice(0, 10) }}</td>
+              <td class="px-4 py-3 text-gray-500">{{ formatDate(batch.created_at) }}</td>
             </tr>
           </tbody>
         </table>

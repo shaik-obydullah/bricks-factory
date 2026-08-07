@@ -24,7 +24,12 @@ class SalesService
 
             if (!empty($data['items'])) {
                 foreach ($data['items'] as $item) {
-                    $order->items()->create($item);
+                    $order->items()->create([
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total' => $item['quantity'] * $item['unit_price'],
+                    ]);
                 }
 
                 $total = $order->items->sum('total');

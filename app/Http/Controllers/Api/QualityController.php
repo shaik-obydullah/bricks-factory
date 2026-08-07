@@ -34,6 +34,9 @@ class QualityController extends Controller
                 ?? \App\Models\User::whereRaw('LOWER(name) LIKE ?', ['% ' . strtolower($name) . '%'])->first();
             $data['inspector_id'] = $user?->id;
         }
+        if (empty($data['inspector_id'])) {
+            $data['inspector_id'] = auth()->id();
+        }
         unset($data['inspector']);
 
         if (!empty($data['result']) && empty($data['status'])) {
@@ -46,7 +49,7 @@ class QualityController extends Controller
         unset($data['result']);
 
         $check = $this->qualityService->createCheck($data);
-        return response()->json($check, 201);
+        return response()->json($check->load('batch.order.product', 'inspector', 'items'), 201);
     }
 
     public function showCheck(QualityCheck $qualityCheck): JsonResponse

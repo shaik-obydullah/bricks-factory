@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Quality Checks</h2>
+    <div class="flex justify-end mb-4">
       <button @click="openForm()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ New Check</button>
     </div>
 
@@ -24,11 +23,11 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3">{{ item.check_date || item.created_at?.substring(0, 10) }}</td>
+            <td class="px-4 py-3">{{ formatDate(item.check_date || item.created_at) }}</td>
             <td class="px-4 py-3">#{{ item.batch_id }}</td>
             <td class="px-4 py-3">{{ item.inspector?.name || item.inspector || '-' }}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="resultClass(item.status)">{{ item.status }}</span>
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="resultClass(item.status)">{{ humanize(item.status) }}</span>
             </td>
             <td class="px-4 py-3 max-w-xs truncate">{{ item.notes || '-' }}</td>
             <td class="px-4 py-3 text-right">
@@ -120,10 +119,11 @@ async function fetchData() {
 
 async function openForm() {
   formVisible.value = true; formError.value = ''
-  form.batch_id = ''; form.inspector = ''; form.result = 'pass'; form.notes = ''
+  form.batch_id = ''; form.result = 'pass'; form.notes = ''
   try {
-    const { data } = await axios.get('/production-batches')
-    batches.value = data.data || data
+    const [userRes, batchRes] = await Promise.all([axios.get('/user'), axios.get('/production-batches')])
+    batches.value = batchRes.data.data || batchRes.data
+    form.inspector = userRes.data?.name || ''
   } catch (e) {}
 }
 

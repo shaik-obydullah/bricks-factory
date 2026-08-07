@@ -1,7 +1,10 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Suppliers</h2>
+      <div class="flex items-center gap-2">
+        <input v-model="filters.search" @input="fetchData" placeholder="Search name, company, email, phone..." class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-72 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+        <button v-if="filters.search" @click="clearFilters" class="text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white">Clear</button>
+      </div>
       <button @click="openForm(null)" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ Add Supplier</button>
     </div>
 
@@ -11,12 +14,12 @@
     <div v-else class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-600">
-          <tr><th class="text-left px-4 py-3 font-medium">Name</th><th class="text-left px-4 py-3 font-medium">Contact</th><th class="text-left px-4 py-3 font-medium">Email</th><th class="text-left px-4 py-3 font-medium">Phone</th><th class="text-right px-4 py-3 font-medium">Actions</th></tr>
+          <tr><th class="text-left px-4 py-3 font-medium">Name</th><th class="text-left px-4 py-3 font-medium">Company</th><th class="text-left px-4 py-3 font-medium">Email</th><th class="text-left px-4 py-3 font-medium">Phone</th><th class="text-right px-4 py-3 font-medium">Actions</th></tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
             <td class="px-4 py-3 font-medium">{{ item.name }}</td>
-            <td class="px-4 py-3">{{ item.contact_person || '-' }}</td>
+            <td class="px-4 py-3">{{ item.company || '-' }}</td>
             <td class="px-4 py-3">{{ item.email || '-' }}</td>
             <td class="px-4 py-3">{{ item.phone || '-' }}</td>
             <td class="px-4 py-3 text-right">
@@ -34,7 +37,7 @@
         <div v-if="formError" class="mb-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">{{ formError }}</div>
         <form @submit.prevent="handleSave" class="space-y-4">
           <div><label class="block text-sm font-medium text-gray-700 mb-1">Name</label><input v-model="form.name" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" /></div>
-          <div><label class="block text-sm font-medium text-gray-700 mb-1">Contact Person</label><input v-model="form.contact_person" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" /></div>
+          <div><label class="block text-sm font-medium text-gray-700 mb-1">Company</label><input v-model="form.company" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" /></div>
           <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input v-model="form.email" type="email" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" /></div>
           <div><label class="block text-sm font-medium text-gray-700 mb-1">Phone</label><input v-model="form.phone" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm" /></div>
           <div><label class="block text-sm font-medium text-gray-700 mb-1">Address</label><textarea v-model="form.address" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm"></textarea></div>
@@ -66,24 +69,29 @@ import axios from '@/utils/axios'
 const items = ref([]); const loading = ref(true); const error = ref('')
 const formVisible = ref(false); const editingItem = ref(null); const saving = ref(false); const formError = ref('')
 const deleteItem = ref(null); const deleting = ref(false)
-const form = reactive({ name: '', contact_person: '', email: '', phone: '', address: '' })
+const form = reactive({ name: '', company: '', email: '', phone: '', address: '' })
+const filters = reactive({ search: '' })
 
 async function fetchData() {
   loading.value = true
-  try { const { data } = await axios.get('/suppliers'); items.value = data.data || data }
+  try {
+    const { data } = await axios.get('/suppliers', { params: { search: filters.search || undefined } })
+    items.value = data.data || data
+  }
   catch (e) { error.value = 'Failed to load suppliers.' }
   finally { loading.value = false }
 }
+function clearFilters() { filters.search = ''; fetchData() }
 function openForm(item) {
   editingItem.value = item
-  form.name = item?.name || ''; form.contact_person = item?.contact_person || ''; form.email = item?.email || ''; form.phone = item?.phone || ''; form.address = item?.address || ''
+  form.name = item?.name || ''; form.company = item?.company || ''; form.email = item?.email || ''; form.phone = item?.phone || ''; form.address = item?.address || ''
   formVisible.value = true; formError.value = ''
 }
 async function handleSave() {
   saving.value = true; formError.value = ''
   try {
     if (editingItem.value) { const { data } = await axios.put(`/suppliers/${editingItem.value.id}`, form); Object.assign(editingItem.value, data.data || data) }
-    else { const { data } = await axios.post('/suppliers', form); items.value.push(data.data || data) }
+    else { const { data } = await axios.post('/suppliers', form); items.value.unshift(data.data || data) }
     formVisible.value = false
   } catch (e) { formError.value = e.response?.data?.message || 'Failed to save.' }
   finally { saving.value = false }

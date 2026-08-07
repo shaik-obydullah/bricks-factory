@@ -17,9 +17,26 @@ class SalesController extends Controller
 {
     public function __construct(protected SalesService $salesService) {}
 
-    public function customers(): JsonResponse
+    public function customers(Request $request): JsonResponse
     {
-        $customers = Customer::latest()->paginate(20);
+        $search = $request->input('search');
+        $company = $request->input('company');
+
+        $customers = Customer::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('company', 'like', "%{$search}%");
+                });
+            })
+            ->when($company, function ($query) use ($company) {
+                $query->where('company', $company);
+            })
+            ->latest()
+            ->paginate(20);
+
         return response()->json($customers);
     }
 
@@ -47,9 +64,14 @@ class SalesController extends Controller
         return response()->json(['message' => 'Customer deleted']);
     }
 
-    public function orders(): JsonResponse
+    public function orders(Request $request): JsonResponse
     {
-        $orders = SalesOrder::with('customer', 'items.product', 'creator')->latest()->paginate(20);
+        $orders = SalesOrder::with('customer', 'items.product', 'creator')
+            ->when($request->input('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
+            ->latest()
+            ->paginate(20);
         return response()->json($orders);
     }
 
@@ -85,7 +107,12 @@ class SalesController extends Controller
             if (!empty($data['items'])) {
                 $salesOrder->items()->delete();
                 foreach ($data['items'] as $item) {
-                    $salesOrder->items()->create($item);
+                    $salesOrder->items()->create([
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total' => $item['quantity'] * $item['unit_price'],
+                    ]);
                 }
                 $total = $salesOrder->items->sum('total');
                 $salesOrder->update([
@@ -106,10 +133,35 @@ class SalesController extends Controller
         return response()->json(['message' => 'Sales order deleted']);
     }
 
-    public function invoices(): JsonResponse
+    public function invoices(Request $request): JsonResponse
     {
-        $invoices = Invoice::with('order.customer', 'payments')->latest()->paginate(20);
+        $invoices = Invoice::with('order.customer', 'payments')
+            ->when($request->input('status'), function ($query) use ($request) {
+                $query->where('status', $request->input('status'));
+            })
+            ->when($request->input('date_from'), function ($query) use ($request) {
+                $query->whereDate('invoice_date', '>=', $request->input('date_from'));
+            })
+            ->when($request->input('date_to'), function ($query) use ($request) {
+                $query->whereDate('invoice_date', '<=', $request->input('date_to'));
+            })
+            ->when($request->input('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('id', 'like', "%{$search}%")
+                        ->orWhereHas('order.customer', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->latest()
+            ->paginate(20);
+
         return response()->json($invoices);
+    }
+
+    public function showInvoice(Invoice $invoice): JsonResponse
+    {
+        $invoice->load('order.customer', 'order.items.product', 'payments');
+        return response()->json($invoice);
     }
 
     public function generateInvoice(Request $request, SalesOrder $salesOrder): JsonResponse
@@ -163,9 +215,17 @@ class SalesController extends Controller
         return response()->json(['message' => 'Invoice deleted']);
     }
 
-    public function payments(): JsonResponse
+    public function payments(Request $request): JsonResponse
     {
-        $payments = Payment::with('invoice.order.customer')->latest()->paginate(20);
+        $payments = Payment::with('invoice.order.customer')
+            ->when($request->input('date_from'), function ($query) use ($request) {
+                $query->whereDate('payment_date', '>=', $request->input('date_from'));
+            })
+            ->when($request->input('date_to'), function ($query) use ($request) {
+                $query->whereDate('payment_date', '<=', $request->input('date_to'));
+            })
+            ->latest()
+            ->paginate(20);
         return response()->json($payments);
     }
 

@@ -22,6 +22,13 @@ class InventoryController extends Controller
 
         $products = Product::query()
             ->with('category')
+            ->when($request->input('search'), function ($query) use ($request) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            })
             ->when($warehouseId, function ($query) use ($warehouseId) {
                 $query->whereHas('productStocks', fn ($q) => $q->where('warehouse_id', $warehouseId))
                     ->with(['productStocks' => fn ($q) => $q->where('warehouse_id', $warehouseId)->with('warehouse')]);
@@ -58,23 +65,50 @@ class InventoryController extends Controller
         return response()->json(['message' => 'Product deleted']);
     }
 
-    public function rawMaterials(): JsonResponse
+    public function rawMaterials(Request $request): JsonResponse
     {
-        $materials = RawMaterial::latest()->paginate(20);
+        $materials = RawMaterial::latest()->paginate($request->integer('per_page', 20));
         return response()->json($materials);
     }
 
     public function storeRawMaterial(Request $request): JsonResponse
     {
-        $material = RawMaterial::create($request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:raw_materials,code',
             'unit' => 'nullable|string|max:50',
             'current_stock' => 'nullable|numeric|min:0',
             'minimum_stock' => 'nullable|numeric|min:0',
+            'min_stock' => 'nullable|numeric|min:0',
             'status' => 'nullable|string|in:active,inactive',
-        ]));
+        ], [], ['code' => 'SKU']);
+        $data['minimum_stock'] = $data['minimum_stock'] ?? $data['min_stock'] ?? 0;
+        unset($data['min_stock']);
+        $material = RawMaterial::create($data);
         return response()->json($material, 201);
+    }
+
+    public function updateRawMaterial(Request $request, RawMaterial $rawMaterial): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'code' => 'nullable|string|max:50|unique:raw_materials,code,' . $rawMaterial->id,
+            'unit' => 'nullable|string|max:50',
+            'current_stock' => 'nullable|numeric|min:0',
+            'minimum_stock' => 'nullable|numeric|min:0',
+            'min_stock' => 'nullable|numeric|min:0',
+            'status' => 'nullable|string|in:active,inactive',
+        ], [], ['code' => 'SKU']);
+        $data['minimum_stock'] = $data['minimum_stock'] ?? $data['min_stock'] ?? $rawMaterial->minimum_stock;
+        unset($data['min_stock']);
+        $rawMaterial->update($data);
+        return response()->json($rawMaterial);
+    }
+
+    public function destroyRawMaterial(RawMaterial $rawMaterial): JsonResponse
+    {
+        $rawMaterial->delete();
+        return response()->json(['message' => 'Raw material deleted']);
     }
 
     public function stockMovements(Request $request): JsonResponse
@@ -121,6 +155,6 @@ class InventoryController extends Controller
         $typeable = $data['typeable_type']::findOrFail($data['typeable_id']);
         $movement = $this->inventoryService->updateStock($typeable, $data['movement_type'], $data['quantity'], $data);
 
-        return response()->json($movement, 201);
+        return response()->json($movement->load('typeable', 'creator'), 201);
     }
 }

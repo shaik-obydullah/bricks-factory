@@ -1,7 +1,6 @@
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Production Batches</h2>
+    <div class="flex justify-end mb-4">
       <button @click="showForm = true" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">+ New Batch</button>
     </div>
 
@@ -32,7 +31,7 @@
             <td class="px-4 py-3">{{ item.machine?.name || '-' }}</td>
             <td class="px-4 py-3">{{ item.shift?.name || '-' }}</td>
             <td class="px-4 py-3">{{ item.quantity_produced }}</td>
-            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ item.status }}</span></td>
+            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(item.status)">{{ humanize(item.status) }}</span></td>
             <td class="px-4 py-3 text-right">
               <button v-if="item.status === 'running'" @click="completeBatch(item)" class="text-green-600 hover:text-green-800 text-sm font-medium">Complete</button>
             </td>

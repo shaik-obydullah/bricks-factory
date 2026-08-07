@@ -22,65 +22,67 @@
 
       <!-- Nav -->
       <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        <NavItem to="/dashboard" label="Dashboard" :icon="icons.dashboard" />
+        <NavItem v-if="authStore.can('dashboard.view')" to="/dashboard" label="Dashboard" :icon="icons.dashboard" />
 
-        <div class="pt-4 pb-1">
+        <div v-if="authStore.can('production.view')" class="pt-4 pb-1">
           <p class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Production</p>
         </div>
-        <NavItem to="/production/orders" label="Orders" :icon="icons.orders" />
-        <NavItem to="/production/batches" label="Batches" :icon="icons.batches" />
-        <NavItem to="/production/machines" label="Machines" :icon="icons.machines" />
-        <NavItem to="/production/targets" label="Targets" :icon="icons.targets" />
+        <NavItem v-if="authStore.can('production.view')" to="/production/orders" label="Orders" :icon="icons.orders" />
+        <NavItem v-if="authStore.can('production.view')" to="/production/batches" label="Batches" :icon="icons.batches" />
+        <NavItem v-if="authStore.can('production.view')" to="/production/machines" label="Machines" :icon="icons.machines" />
+        <NavItem v-if="authStore.can('production.view')" to="/production/targets" label="Targets" :icon="icons.targets" />
 
-        <div class="pt-4 pb-1">
+        <div v-if="authStore.can('inventory.view')" class="pt-4 pb-1">
           <p class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Inventory</p>
         </div>
-        <NavItem to="/inventory/products" label="Products" :icon="icons.products" />
-        <NavItem to="/inventory/raw-materials" label="Raw Materials" :icon="icons.materials" />
-        <NavItem to="/inventory/stock-movements" label="Stock Movements" :icon="icons.movements" />
-        <NavItem to="/inventory/stock-alerts" label="Stock Alerts" :icon="icons.alerts" />
-        <NavItem to="/inventory/warehouses" label="Warehouses" :icon="icons.warehouses" />
-        <NavItem to="/inventory/categories" label="Categories" :icon="icons.categories" />
+        <NavItem v-if="authStore.can('inventory.view')" to="/inventory/products" label="Products" :icon="icons.products" />
+        <NavItem v-if="authStore.can('inventory.view')" to="/inventory/raw-materials" label="Raw Materials" :icon="icons.materials" />
+        <NavItem v-if="authStore.can('inventory.view')" to="/inventory/stock-movements" label="Stock Movements" :icon="icons.movements" />
+        <NavItem v-if="authStore.can('inventory.view')" to="/inventory/stock-alerts" label="Stock Alerts" :icon="icons.alerts" />
+        <NavItem v-if="authStore.can('inventory.view')" to="/inventory/warehouses" label="Warehouses" :icon="icons.warehouses" />
+        <NavItem v-if="authStore.can('inventory.view')" to="/inventory/categories" label="Categories" :icon="icons.categories" />
 
-        <div class="pt-4 pb-1">
+        <div v-if="authStore.can('quality.view')" class="pt-4 pb-1">
           <p class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Quality</p>
         </div>
-        <NavItem to="/quality/checks" label="Checks" :icon="icons.checks" />
-        <NavItem to="/quality/defects" label="Defects" :icon="icons.defects" />
+        <NavItem v-if="authStore.can('quality.view')" to="/quality/checks" label="Checks" :icon="icons.checks" />
+        <NavItem v-if="authStore.can('quality.view')" to="/quality/defects" label="Defects" :icon="icons.defects" />
 
-        <div class="pt-4 pb-1">
+        <div v-if="authStore.can('sales.view')" class="pt-4 pb-1">
           <p class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Sales</p>
         </div>
-        <NavItem to="/sales/customers" label="Customers" :icon="icons.customers" />
-        <NavItem to="/sales/orders" label="Orders" :icon="icons.salesOrders" />
-        <NavItem to="/sales/invoices" label="Invoices" :icon="icons.invoices" />
-        <NavItem to="/sales/payments" label="Payments" :icon="icons.payments" />
+        <NavItem v-if="authStore.can('sales.view')" to="/sales/customers" label="Customers" :icon="icons.customers" />
+        <NavItem v-if="authStore.can('sales.view')" to="/sales/orders" label="Orders" :icon="icons.salesOrders" />
+        <NavItem v-if="authStore.can('sales.view')" to="/sales/invoices" label="Invoices" :icon="icons.invoices" />
+        <NavItem v-if="authStore.can('sales.view')" to="/sales/payments" label="Payments" :icon="icons.payments" />
 
-        <div class="pt-4 pb-1">
+        <div v-if="authStore.can('purchase.view')" class="pt-4 pb-1">
           <p class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Purchase</p>
         </div>
-        <NavItem to="/purchase/suppliers" label="Suppliers" :icon="icons.suppliers" />
-        <NavItem to="/purchase/orders" label="Orders" :icon="icons.purchaseOrders" />
-        <NavItem to="/purchase/goods-receipts" label="Goods Receipts" :icon="icons.receipts" />
+        <NavItem v-if="authStore.can('purchase.view')" to="/purchase/suppliers" label="Suppliers" :icon="icons.suppliers" />
+        <NavItem v-if="authStore.can('purchase.view')" to="/purchase/orders" label="Orders" :icon="icons.purchaseOrders" />
+        <NavItem v-if="authStore.can('purchase.view')" to="/purchase/goods-receipts" label="Goods Receipts" :icon="icons.receipts" />
 
-        <div class="pt-4 pb-1">
+        <div v-if="authStore.can('employees.view')" class="pt-4 pb-1">
           <p class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Employees</p>
         </div>
-        <NavItem to="/employees" label="Employees" :icon="icons.employees" />
-        <NavItem to="/employees/attendance" label="Attendance" :icon="icons.attendance" />
+        <NavItem v-if="authStore.can('employees.view')" to="/employees" label="Employees" :icon="icons.employees" />
+        <NavItem v-if="authStore.can('employees.view')" to="/employees/attendance" label="Attendance" :icon="icons.attendance" />
 
-        <div class="pt-4 pb-1">
+        <div v-if="authStore.can('reports.view')" class="pt-4 pb-1">
           <p class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">Reports</p>
         </div>
-        <NavItem to="/reports/production" label="Production" :icon="icons.reports" />
-        <NavItem to="/reports/inventory" label="Inventory" :icon="icons.reports" />
-        <NavItem to="/reports/sales" label="Sales" :icon="icons.reports" />
-        <NavItem to="/reports/quality" label="Quality" :icon="icons.reports" />
+        <NavItem v-if="authStore.can('reports.view')" to="/reports/production" label="Production" :icon="icons.reports" />
+        <NavItem v-if="authStore.can('reports.view')" to="/reports/inventory" label="Inventory" :icon="icons.reports" />
+        <NavItem v-if="authStore.can('reports.view')" to="/reports/sales" label="Sales" :icon="icons.reports" />
+        <NavItem v-if="authStore.can('reports.view')" to="/reports/quality" label="Quality" :icon="icons.reports" />
 
-        <div class="pt-4 pb-1">
+        <div v-if="authStore.can('settings.view') || authStore.can('users.view')" class="pt-4 pb-1">
           <p class="px-4 text-xs font-semibold uppercase tracking-wider text-gray-400">System</p>
         </div>
-        <NavItem to="/settings" label="Settings" :icon="icons.settings" />
+        <NavItem v-if="authStore.can('settings.view')" to="/settings" label="Settings" :icon="icons.settings" />
+        <NavItem v-if="authStore.can('users.view')" to="/settings/users" label="Users" :icon="icons.users" />
+        <NavItem v-if="authStore.can('users.view')" to="/settings/roles" label="Roles & Permissions" :icon="icons.roles" />
       </nav>
 
       <!-- User info at bottom -->
@@ -113,7 +115,7 @@
         </button>
         <h1 class="text-lg font-semibold text-gray-800 flex-1">{{ pageTitle }}</h1>
         <div class="flex items-center gap-4">
-          <div class="relative">
+          <div v-if="showWarehouseFilter" class="relative">
             <select
               v-model="appStore.selectedWarehouse"
               @change="onWarehouseChange"
@@ -161,6 +163,8 @@ const mobileSidebarOpen = ref(false)
 const showUserDrawer = ref(false)
 const warehouses = ref([])
 
+const showWarehouseFilter = computed(() => ['Products', 'ProductDetail'].includes(route.name))
+
 function onWarehouseChange() {
   appStore.setSelectedWarehouse(appStore.selectedWarehouse)
 }
@@ -200,6 +204,8 @@ const pageTitle = computed(() => {
     ReportSales: 'Sales Report',
     ReportQuality: 'Quality Report',
     Settings: 'Settings',
+    Users: 'Users',
+    Roles: 'Roles & Permissions',
   }
   return titles[name] || name
 })
@@ -235,5 +241,7 @@ const icons = {
   attendance: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>',
   reports: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>',
   settings: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></svg>',
+  users: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>',
+  roles: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>',
 }
 </script>

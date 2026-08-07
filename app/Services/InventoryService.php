@@ -75,13 +75,42 @@ class InventoryService
 
     public function getStockAlerts(): array
     {
-        $lowStockMaterials = RawMaterial::where('current_stock', '<=', DB::raw('minimum_stock'))
+        $materials = RawMaterial::where('current_stock', '<=', DB::raw('minimum_stock'))
             ->where('status', 'active')
             ->get();
 
+        $outOfStockProducts = Product::where('status', 'active')
+            ->whereHas('productStocks')
+            ->whereDoesntHave('productStocks', fn ($q) => $q->where('quantity', '>', 0))
+            ->get();
+
+        $items = collect();
+
+        foreach ($materials as $m) {
+            $items->push([
+                'id' => 'material-' . $m->id,
+                'name' => $m->name,
+                'type' => 'raw_material',
+                'current_stock' => $m->current_stock,
+                'minimum_stock' => $m->minimum_stock,
+            ]);
+        }
+
+        foreach ($outOfStockProducts as $p) {
+            $items->push([
+                'id' => 'product-' . $p->id,
+                'name' => $p->name,
+                'type' => 'product',
+                'current_stock' => 0,
+                'minimum_stock' => null,
+            ]);
+        }
+
         return [
-            'low_stock_materials' => $lowStockMaterials,
-            'count' => $lowStockMaterials->count(),
+            'items' => $items->values(),
+            'low_stock_materials' => $materials,
+            'low_stock_products' => $outOfStockProducts,
+            'count' => $items->count(),
         ];
     }
 

@@ -1,7 +1,20 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-800">Goods Receipts</h2>
+      <div class="flex items-center gap-2">
+        <input v-model="filters.search" @input="fetchData" placeholder="Search PO # or supplier..." class="border border-gray-300 rounded-lg px-3 py-2 text-sm w-64 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+        <select v-model="filters.status" @change="fetchData" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <option value="">All Statuses</option>
+          <option value="received">Received</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+        </select>
+        <input v-model="filters.date_from" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+        <span class="text-gray-400 text-sm">to</span>
+        <input v-model="filters.date_to" type="date" class="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+        <button @click="fetchData" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">Filter</button>
+        <button v-if="hasFilters" @click="clearFilters" class="text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white">Clear</button>
+      </div>
       <button @click="openForm()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">+ Receive Goods</button>
     </div>
 
@@ -15,11 +28,11 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3">{{ item.receipt_date || item.created_at?.substring(0, 10) }}</td>
-            <td class="px-4 py-3">#{{ item.purchase_order_id }}</td>
+            <td class="px-4 py-3">{{ formatDate(item.receipt_date || item.created_at) }}</td>
+            <td class="px-4 py-3">#{{ item.order_id }}</td>
             <td class="px-4 py-3">{{ item.order?.supplier?.name || '-' }}</td>
             <td class="px-4 py-3">{{ item.quantity_received ?? '-' }}</td>
-            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="item.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">{{ item.status }}</span></td>
+            <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="item.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">{{ humanize(item.status) }}</span></td>
           </tr>
         </tbody>
       </table>
@@ -70,20 +83,27 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import axios from '@/utils/axios'
 
 const items = ref([]); const purchaseOrders = ref([]); const materials = ref([]); const warehouses = ref([])
 const loading = ref(true); const error = ref('')
 const formVisible = ref(false); const saving = ref(false); const formError = ref('')
 const form = reactive({ purchase_order_id: '', raw_material_id: '', quantity_received: 1, warehouse_id: '', received_date: '' })
+const filters = reactive({ search: '', status: '', date_from: '', date_to: '' })
+const hasFilters = computed(() => filters.search || filters.status || filters.date_from || filters.date_to)
 
 async function fetchData() {
   loading.value = true
-  try { const { data } = await axios.get('/goods-receipts'); items.value = data.data || data }
+  try {
+    const { data } = await axios.get('/goods-receipts', { params: { search: filters.search || undefined, status: filters.status || undefined, date_from: filters.date_from || undefined, date_to: filters.date_to || undefined } })
+    items.value = data.data || data
+  }
   catch (e) { error.value = 'Failed to load receipts.' }
   finally { loading.value = false }
 }
+
+function clearFilters() { filters.search = ''; filters.status = ''; filters.date_from = ''; filters.date_to = ''; fetchData() }
 
 async function openForm() {
   formVisible.value = true; formError.value = ''
